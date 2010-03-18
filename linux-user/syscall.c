@@ -187,9 +187,13 @@ static type name (type1 arg1,type2 arg2,type3 arg3,type4 arg4,type5 arg5,	\
 #define __NR_sys_tgkill __NR_tgkill
 #define __NR_sys_tkill __NR_tkill
 #define __NR_sys_unlinkat __NR_unlinkat
+#ifndef __NR_utimensat
+#define __NR_utimensat 320 /* ugly hack for sb1 */
+#endif
 #define __NR_sys_utimensat __NR_utimensat
 #define __NR_sys_futex __NR_futex
 #define __NR_sys_inotify_init __NR_inotify_init
+#define __NR_sys_inotify_init1 __NR_inotify_init1
 #define __NR_sys_inotify_add_watch __NR_inotify_add_watch
 #define __NR_sys_inotify_rm_watch __NR_inotify_rm_watch
 
@@ -455,6 +459,11 @@ _syscall3(int,sys_mkdirat,int,dirfd,const char *,pathname,mode_t,mode)
 _syscall4(int,sys_mknodat,int,dirfd,const char *,pathname,
           mode_t,mode,dev_t,dev)
 #endif
+#if (defined(TARGET_NR_newfstatat) || defined(TARGET_NR_fstatat64) ) && \
+        defined(__NR_newfstatat)
+_syscall4(int,sys_newfstatat,int,dirfd,const char *,pathname,
+          struct stat *,buf,int,flags)
+#endif
 #if defined(TARGET_NR_openat) && defined(__NR_openat)
 _syscall4(int,sys_openat,int,dirfd,const char *,pathname,int,flags,mode_t,mode)
 #endif
@@ -513,6 +522,18 @@ static int sys_inotify_rm_watch(int fd, int32_t wd)
   return (inotify_rm_watch(fd, wd));
 }
 #endif
+#else
+#if defined(TARGET_NR_inotify_init) && defined(__NR_inotify_init)
+_syscall0(int,sys_inotify_init)
+#endif
+#if defined(TARGET_NR_inotify_add_watch) && defined(__NR_inotify_add_watch)
+_syscall3(int,sys_inotify_add_watch,int,fd,const char *,pathname, int32_t,mask)
+#endif
+#if defined(TARGET_NR_inotify_rm_watch) && defined(__NR_inotify_rm_watch)
+_syscall2(int,sys_inotify_rm_watch,int,fd, int32_t,wd)
+#endif
+#endif /* CONFIG_INOTIFY  */
+
 #ifdef CONFIG_INOTIFY1
 #if defined(TARGET_NR_inotify_init1) && defined(__NR_inotify_init1)
 static int sys_inotify_init1(int flags)
@@ -520,14 +541,11 @@ static int sys_inotify_init1(int flags)
   return (inotify_init1(flags));
 }
 #endif
-#endif
 #else
-/* Userspace can usually survive runtime without inotify */
-#undef TARGET_NR_inotify_init
-#undef TARGET_NR_inotify_init1
-#undef TARGET_NR_inotify_add_watch
-#undef TARGET_NR_inotify_rm_watch
-#endif /* CONFIG_INOTIFY  */
+#if defined(TARGET_NR_inotify_init1) && defined(__NR_inotify_init1)
+_syscall1(int,sys_inotify_init1,int,flags)
+#endif
+#endif
 
 
 extern int personality(int);
@@ -890,6 +908,38 @@ static inline abi_long copy_to_user_timeval(abi_ulong target_tv_addr,
     return 0;
 }
 
+static inline abi_long copy_from_user_timespec(struct timespec *ts,
+                                              abi_ulong target_ts_addr)
+{
+    struct target_timespec *target_ts;
+
+    if (!lock_user_struct(VERIFY_READ, target_ts, target_ts_addr, 1))
+        return -TARGET_EFAULT;
+
+    __get_user(ts->tv_sec, &target_ts->tv_sec);
+    __get_user(ts->tv_nsec, &target_ts->tv_nsec);
+
+    unlock_user_struct(target_ts, target_ts_addr, 0);
+
+    return 0;
+}
+
+
+static inline abi_long copy_to_user_timespec(abi_ulong target_ts_addr,
+                                            const struct timespec *ts)
+{
+    struct target_timespec *target_ts;
+
+    if (!lock_user_struct(VERIFY_WRITE, target_ts, target_ts_addr, 0))
+        return -TARGET_EFAULT;
+
+    __put_user(ts->tv_sec, &target_ts->tv_sec);
+    __put_user(ts->tv_nsec, &target_ts->tv_nsec);
+
+    unlock_user_struct(target_ts, target_ts_addr, 1);
+
+    return 0;
+}
 #if defined(TARGET_NR_mq_open) && defined(__NR_mq_open)
 #include <mqueue.h>
 
@@ -988,6 +1038,75 @@ static abi_long do_select(int n,
 
     return ret;
 }
+
+#ifdef TARGET_NR_pselect6
+/* do_pselect() must return target values and target errnos. */
+static abi_long do_pselect(int n,
+                          abi_ulong rfd_addr, abi_ulong wfd_addr,
+                          abi_ulong efd_addr, abi_ulong target_tv_addr,
+                          abi_ulong set_addr)
+{
+    fd_set rfds, wfds, efds;
+    fd_set *rfds_ptr, *wfds_ptr, *efds_ptr;
+    struct timespec tv, *tv_ptr;
+    sigset_t set, *set_ptr;
+    abi_long ret;
+
+    if (rfd_addr) {
+        if (copy_from_user_fdset(&rfds, rfd_addr, n))
+            return -TARGET_EFAULT;
+        rfds_ptr = &rfds;
+    } else {
+        rfds_ptr = NULL;
+    }
+    if (wfd_addr) {
+        if (copy_from_user_fdset(&wfds, wfd_addr, n))
+            return -TARGET_EFAULT;
+        wfds_ptr = &wfds;
+    } else {
+        wfds_ptr = NULL;
+    }
+    if (efd_addr) {
+        if (copy_from_user_fdset(&efds, efd_addr, n))
+            return -TARGET_EFAULT;
+        efds_ptr = &efds;
+    } else {
+        efds_ptr = NULL;
+    }
+
+    if (target_tv_addr) {
+        if (copy_from_user_timespec(&tv, target_tv_addr))
+            return -TARGET_EFAULT;
+        tv_ptr = &tv;
+    } else {
+        tv_ptr = NULL;
+    }
+
+    /* We don't need to return sigmask to target */
+    if (set_addr) {
+        target_to_host_old_sigset(&set, &set_addr);
+        set_ptr = &set;
+    } else {
+        set_ptr = NULL;
+    }
+
+    ret = get_errno(pselect(n, rfds_ptr, wfds_ptr, efds_ptr, tv_ptr, set_ptr));
+
+    if (!is_error(ret)) {
+        if (rfd_addr && copy_to_user_fdset(rfd_addr, &rfds, n))
+            return -TARGET_EFAULT;
+        if (wfd_addr && copy_to_user_fdset(wfd_addr, &wfds, n))
+            return -TARGET_EFAULT;
+        if (efd_addr && copy_to_user_fdset(efd_addr, &efds, n))
+            return -TARGET_EFAULT;
+
+        if (target_tv_addr && copy_to_user_timespec(target_tv_addr, &tv))
+            return -TARGET_EFAULT;
+    }
+
+    return ret;
+}
+#endif
 
 static abi_long do_pipe2(int host_pipe[], int flags)
 {
@@ -3683,6 +3802,7 @@ typedef struct {
     pthread_cond_t cond;
     pthread_t thread;
     uint32_t tid;
+    unsigned int flags;
     abi_ulong child_tidptr;
     abi_ulong parent_tidptr;
     sigset_t sigmask;
@@ -5435,7 +5555,20 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
 #endif
 #ifdef TARGET_NR_pselect6
     case TARGET_NR_pselect6:
-	    goto unimplemented_nowarn;
+        {
+            abi_ulong inp, outp, exp, tvp, set;
+            long nsel;
+
+            nsel = tswapl(arg1);
+            inp = tswapl(arg2);
+            outp = tswapl(arg3);
+            exp = tswapl(arg4);
+            tvp = tswapl(arg5);
+            set = tswapl(arg6);
+
+            ret = do_pselect(nsel, inp, outp, exp, tvp, set);
+        }
+        break;
 #endif
     case TARGET_NR_symlink:
         {
@@ -7317,12 +7450,10 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         ret = get_errno(sys_inotify_init());
         break;
 #endif
-#ifdef CONFIG_INOTIFY1
 #if defined(TARGET_NR_inotify_init1) && defined(__NR_inotify_init1)
     case TARGET_NR_inotify_init1:
         ret = get_errno(sys_inotify_init1(arg1));
         break;
-#endif
 #endif
 #if defined(TARGET_NR_inotify_add_watch) && defined(__NR_inotify_add_watch)
     case TARGET_NR_inotify_add_watch:
