@@ -458,6 +458,15 @@ static void sdl_update_caption(void)
         }
     }
 
+#ifdef CONFIG_GLES2
+    char extended_status[128];
+    char *gles2_backend = getenv("DGLES2_BACKEND");
+    if (gles2_backend && !strncmp(gles2_backend, "osmesa", 6)) {
+        snprintf(extended_status, 128, " (softGL)%s", status);
+        status = extended_status;
+    }
+#endif
+
     if (qemu_name) {
         snprintf(win_title, sizeof(win_title), "QEMU (%s)%s", qemu_name, status);
         snprintf(icon_title, sizeof(icon_title), "QEMU (%s)", qemu_name);

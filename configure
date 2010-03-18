@@ -169,6 +169,8 @@ blobs="yes"
 pkgversion=""
 check_utests="no"
 user_pie="no"
+gles2="no"
+gles2_static="no"
 zero_malloc=""
 trace_backend="nop"
 trace_file="trace"
@@ -713,6 +715,12 @@ for opt do
   ;;
   --enable-vhost-net) vhost_net="yes"
   ;;
+  --enable-gles2) gles2="yes"; gles2dir="/usr";
+  ;;
+  --enable-gles2-static) gles2="yes"; gles2_static="yes" gles2dir="/usr";
+  ;;
+  --gles2dir=*) gles2dir="$optarg"
+  ;;
   --*dir)
   ;;
   --disable-rbd) rbd="no"
@@ -723,6 +731,13 @@ for opt do
   ;;
   esac
 done
+
+if test "$mingw32" = "yes" ; then
+  if test "$gles2" = "yes" ; then
+    QEMU_CFLAGS="-mthreads $QEMU_CFLAGS"
+    LDFLAGS="-mthreads $LDFLAGS"
+  fi
+fi
 
 #
 # If cpu ~= sparc and  sparc_cpu hasn't been defined, plug in the right
@@ -913,6 +928,9 @@ echo "                           Default:trace-<pid>"
 echo "  --disable-spice          disable spice"
 echo "  --enable-spice           enable spice"
 echo "  --enable-rbd             enable building the rados block device (rbd)"
+echo "  --enable-gles2           ARM target: Enable OpenGL ES 2.0 hardware accelerator"
+echo "  --enable-gles2-static    ARM target: Link OpenGL ES 2.0 hardware accelerator statically"
+echo "  --gles2dir=PATH          prefix where dgles2 is installed"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -2455,6 +2473,9 @@ echo "Trace output file $trace_file-<pid>"
 echo "spice support     $spice"
 echo "rbd support       $rbd"
 echo "xfsctl support    $xfs"
+echo "gles2 support     $gles2"
+echo "gles2 static      $gles2_static"
+echo "dgles2 prefix     $gles2dir"
 
 if test $sdl_too_old = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -2725,6 +2746,12 @@ fi
 
 if test "$spice" = "yes" ; then
   echo "CONFIG_SPICE=y" >> $config_host_mak
+if test "$gles2" = "yes" ; then
+  echo "CONFIG_GLES2=y" >> $config_host_mak
+if test "$gles2_static" = "yes" ; then
+  echo "CONFIG_GLES2_STATIC=y" >> $config_host_mak
+fi
+  echo "DGLES2=$gles2dir" >> $config_host_mak
 fi
 
 # XXX: suppress that

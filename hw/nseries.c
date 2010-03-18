@@ -1546,6 +1546,10 @@ static QEMUMachine n810_machine = {
     .init = n810_init,
 };
 
+#ifdef CONFIG_GLES2
+#include "gles2.h"
+#endif
+
 #define N900_SDRAM_SIZE (256 * 1024 * 1024)
 #define N900_ONENAND_CS 0
 #define N900_ONENAND_BUFSIZE (0xc000 << 1)
@@ -2531,6 +2535,9 @@ static void n900_init(ram_addr_t ram_size,
     qemu_add_kbd_event_handler(n900_key_handler, s);
     qemu_set_display_close_handler(n900_display_close_callback, s);
 
+#ifdef CONFIG_GLES2
+    s->gles2 = gles2_init(s->cpu->env);
+#endif
     qemu_register_reset(n900_reset, s);
     n900_reset(s);
 }

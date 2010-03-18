@@ -336,6 +336,27 @@ obj-y += $(addprefix ../libdis/, $(libdis-y))
 obj-y += $(libobj-y)
 obj-y += $(addprefix $(HWDIR)/, $(hw-obj-y))
 
+ifeq ($(TARGET_BASE_ARCH), arm)
+ifdef CONFIG_GLES2
+CFLAGS+=-I$(DGLES2)/include
+LIBS+=-L$(DGLES2)/lib
+ifdef CONFIG_GLES2_STATIC
+LIBS+=-Wl,-Bstatic -lEGL -lGLESv2 -lOSMesa -Wl,-Bdynamic
+else
+LIBS+=-lEGL -lGLESv2
+endif
+ifndef CONFIG_WIN32
+ifndef CONFIG_COCOA
+LIBS+=-lX11
+endif
+LIBS+=-ldl
+endif
+gles2_calls.o: gles2_calls.c gles2.h gles2_calls.h
+gles2.o: gles2.c gles2.h gles2_calls.h
+obj-arm-y += gles2.o gles2_calls.o
+endif # CONFIG_GLES2
+endif # TARGET_BASE_ARCH==arm
+
 endif # CONFIG_SOFTMMU
 
 obj-y += $(addprefix ../, $(trace-obj-y))

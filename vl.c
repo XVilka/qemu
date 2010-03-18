@@ -262,6 +262,10 @@ int kvm_allowed = 0;
 uint32_t xen_domid;
 enum xen_mode xen_mode = XEN_EMULATE;
 
+#ifdef CONFIG_GLES2
+int gles2_quality = 100;
+#endif
+
 static int default_serial = 1;
 static int default_parallel = 1;
 static int default_virtcon = 1;
@@ -2519,6 +2523,11 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_smbios:
                 do_smbios_option(optarg);
                 break;
+#ifdef CONFIG_GLES2
+            case QEMU_OPTION_gles2_quality:
+                gles2_quality = strtoul(optarg, NULL, 10);
+                break;
+#endif
             case QEMU_OPTION_enable_kvm:
                 kvm_allowed = 1;
                 break;

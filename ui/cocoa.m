@@ -767,12 +767,18 @@ static int cocoa_keycode_to_qemu(int keycode)
 - (void) updateCaption
 {
     NSMutableString *caption = [NSMutableString stringWithCapacity:10];
-    [caption appendFormat:@"QEMU"];
-    if (isShuttingDownGuest) {
-        [caption appendString:@" [Shutting down]"];
-    }
+    [caption setString:@"QEMU"];
     if (qemu_name) {
         [caption appendFormat:@" (%s)", qemu_name];
+    }
+#ifdef CONFIG_GLES2
+    char *gles2_backend = getenv("DGLES2_BACKEND");
+    if (gles2_backend && !strncmp(gles2_backend, "osmesa", 6)) {
+        [caption appendString:@" (softGL)"];
+    }
+#endif
+    if (isShuttingDownGuest) {
+        [caption appendString:@" [Shutting down]"];
     }
     if (!vm_running) {
         [caption appendString:@" [Stopped]"];

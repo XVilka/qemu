@@ -1018,6 +1018,25 @@ STEXI
 @end table
 ETEXI
 
+#ifdef TARGET_ARM
+DEFHEADING(arm target only:)
+#endif
+STEXI
+@table @option
+ETEXI
+
+#if(defined TARGET_ARM && defined CONFIG_GLES2)
+DEF("gles2-quality", HAS_ARG, QEMU_OPTION_gles2_quality,
+    "-gles2-quality  set GLES 2.0 rendering quality [0 ... 100]\n")
+#endif
+
+#ifdef TARGET_ARM
+DEFHEADING()
+#endif
+STEXI
+@end table
+ETEXI
+
 DEFHEADING(Network options:)
 STEXI
 @table @option
