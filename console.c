@@ -32,6 +32,24 @@
 #define QEMU_RGBA(r, g, b, a) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
 #define QEMU_RGB(r, g, b) QEMU_RGBA(r, g, b, 0xff)
 
+int multitouch_enabled = 0;
+static QEMUDisplayCloseCallback *qemu_display_close_callback = NULL;
+static void *qemu_display_close_callback_opaque = NULL;
+
+void qemu_set_display_close_handler(QEMUDisplayCloseCallback *cb, void *opaque)
+{
+    qemu_display_close_callback = cb;
+    qemu_display_close_callback_opaque = opaque;
+}
+
+int qemu_run_display_close_handler(void)
+{
+    if (qemu_display_close_callback != NULL) {
+        return qemu_display_close_callback(qemu_display_close_callback_opaque);
+    }
+    return 1;
+}
+
 typedef struct TextAttributes {
     uint8_t fgcol:4;
     uint8_t bgcol:4;

@@ -61,6 +61,8 @@ static SDL_Cursor *guest_sprite = NULL;
 static uint8_t allocator;
 static SDL_PixelFormat host_format;
 static int scaling_active = 0;
+static int mouseX = 0, mouseY = 0;
+static int shutting_down_guest = 0;
 static Notifier mouse_mode_notifier;
 
 static void sdl_update(DisplayState *ds, int x, int y, int w, int h)
@@ -82,6 +84,30 @@ static void sdl_update(DisplayState *ds, int x, int y, int w, int h)
             }
         }
     } 
+    if (multitouch_enabled && !cursor_hide && !gui_grab &&
+        modifiers_state[56] && real_screen && real_screen->pixels) {
+        unsigned char *p = (unsigned char *)real_screen->pixels;
+        int altX = real_screen->w - mouseX;
+        int altY = real_screen->h - mouseY;
+        int x, y;
+        int bytesperpixel = real_screen->format->BytesPerPixel;
+        p += altY * real_screen->pitch;
+        for (y = 0; y < 8; y++) {
+            if (y + altY > 0 && y + altY < real_screen->h) {
+                unsigned char *q = p + altX * bytesperpixel;
+                for (x = 0; x < 8; x++) {
+                    if (x + altX > 0 && x + altX < real_screen->w) {
+                        int i;
+                        for (i = 0; i < bytesperpixel; i++) {
+                            q[i] ^= 0xff;
+                        }
+                    }
+                    q += bytesperpixel;
+                }
+            }
+            p += real_screen->pitch;
+        }
+    }
     SDL_UpdateRect(real_screen, rec.x, rec.y, rec.w, rec.h);
 }
 
@@ -417,15 +443,19 @@ static void sdl_update_caption(void)
     char icon_title[1024];
     const char *status = "";
 
-    if (!vm_running)
-        status = " [Stopped]";
-    else if (gui_grab) {
-        if (alt_grab)
-            status = " - Press Ctrl-Alt-Shift to exit mouse grab";
-        else if (ctrl_grab)
-            status = " - Press Right-Ctrl to exit mouse grab";
-        else
-            status = " - Press Ctrl-Alt to exit mouse grab";
+    if (shutting_down_guest) {
+        status = " [Shutting down]";
+    } else {
+        if (!vm_running)
+            status = " [Stopped]";
+        else if (gui_grab) {
+            if (alt_grab)
+                status = " - Press Ctrl-Alt-Shift to exit mouse grab";
+            else if (ctrl_grab)
+                status = " - Press Right-Ctrl to exit mouse grab";
+            else
+                status = " - Press Ctrl-Alt to exit mouse grab";
+        }
     }
 
     if (qemu_name) {
@@ -517,6 +547,9 @@ static void sdl_send_mouse_event(int dx, int dy, int dz, int x, int y, int state
         buttons |= MOUSE_EVENT_RBUTTON;
     if (state & SDL_BUTTON(SDL_BUTTON_MIDDLE))
         buttons |= MOUSE_EVENT_MBUTTON;
+    if (modifiers_state[56] &&
+        (buttons & (MOUSE_EVENT_LBUTTON | MOUSE_EVENT_RBUTTON)))
+        buttons |= MOUSE_EVENT_MBUTTON << 1;
 
     if (kbd_mouse_is_absolute()) {
        dx = x * 0x7FFF / (width - 1);
@@ -529,6 +562,9 @@ static void sdl_send_mouse_event(int dx, int dy, int dz, int x, int y, int state
         dx = x;
         dy = y;
     }
+
+    mouseX = x;
+    mouseY = y;
 
     kbd_mouse_event(dx, dy, dz, buttons);
 }
@@ -682,8 +718,14 @@ static void sdl_refresh(DisplayState *ds)
                 sdl_process_key(&ev->key);
             break;
         case SDL_QUIT:
-            if (!no_quit)
-                qemu_system_shutdown_request();
+            if (!no_quit) {
+                if (qemu_run_display_close_handler()) {
+                    qemu_system_shutdown_request();
+                } else {
+                    shutting_down_guest = 1;
+                    sdl_update_caption();
+                }
+            }
             break;
         case SDL_MOUSEMOTION:
             if (gui_grab || kbd_mouse_is_absolute() ||
@@ -700,7 +742,7 @@ static void sdl_refresh(DisplayState *ds)
                     if (ev->type == SDL_MOUSEBUTTONDOWN &&
                         (bev->button == SDL_BUTTON_LEFT)) {
                         /* start grabbing all events */
-                        sdl_grab_start();
+                        if (cursor_allow_grab) sdl_grab_start();
                     }
                 } else {
                     int dz;
