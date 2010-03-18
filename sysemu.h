@@ -128,6 +128,7 @@ extern int usb_enabled;
 extern int smp_cpus;
 extern int max_cpus;
 extern int cursor_hide;
+extern int cursor_allow_grab;
 extern int graphic_rotate;
 extern int no_quit;
 extern int no_shutdown;
