@@ -5092,8 +5092,10 @@ static int disas_neon_data_insn(CPUState * env, DisasContext *s, uint32_t insn)
                         dead_tmp(tmp);
                         break;
                     case 14: /* Polynomial VMULL */
-                        cpu_abort(env, "Polynomial VMULL not implemented");
-
+                        gen_helper_neon_mull_p8(cpu_V0, tmp, tmp2);
+                        dead_tmp(tmp2);
+                        dead_tmp(tmp);
+                        break;
                     default: /* 15 is RESERVED.  */
                         abort(); /* op == 15 is handled earlier */
                     }
