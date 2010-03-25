@@ -5099,7 +5099,7 @@ static int disas_neon_data_insn(CPUState * env, DisasContext *s, uint32_t insn)
                     }
                     if (op == 5 || op == 13 || (op >= 8 && op <= 11)) {
                         /* Accumulate.  */
-                        if (op == 10 || op == 11) {
+                        if (op == 10) {
                             gen_neon_negl(cpu_V0, size);
                         }
 
@@ -5113,9 +5113,11 @@ static int disas_neon_data_insn(CPUState * env, DisasContext *s, uint32_t insn)
                             break;
                         case 9: case 11: /* VQDMLAL, VQDMLSL */
                             gen_neon_addl_saturate(cpu_V0, cpu_V0, size);
+                            if (op == 11) {
+                                gen_neon_negl(cpu_V0, size);
+                            }
                             gen_neon_addl_saturate(cpu_V0, cpu_V1, size);
                             break;
-                            /* Fall through.  */
                         case 13: /* VQDMULL */
                             gen_neon_addl_saturate(cpu_V0, cpu_V0, size);
                             break;
@@ -5273,7 +5275,7 @@ static int disas_neon_data_insn(CPUState * env, DisasContext *s, uint32_t insn)
                         }
                         gen_neon_mull(cpu_V0, tmp, tmp2, size, u);
                         dead_tmp(tmp);
-                        if (op == 6 || op == 7) {
+                        if (op == 6) {
                             gen_neon_negl(cpu_V0, size);
                         }
                         if (op != 11) {
@@ -5285,6 +5287,9 @@ static int disas_neon_data_insn(CPUState * env, DisasContext *s, uint32_t insn)
                             break;
                         case 3: case 7:
                             gen_neon_addl_saturate(cpu_V0, cpu_V0, size);
+                            if (op == 7) {
+                                gen_neon_negl(cpu_V0, size);
+                            }
                             gen_neon_addl_saturate(cpu_V0, cpu_V1, size);
                             break;
                         case 10:
