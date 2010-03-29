@@ -110,6 +110,7 @@ int main(int argc, char **argv)
 #endif /* CONFIG_SDL */
 
 #ifdef CONFIG_COCOA
+int qemu_main(int argc, char **argv, char **envp);
 #undef main
 #define main qemu_main
 #endif /* CONFIG_COCOA */
