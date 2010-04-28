@@ -47,29 +47,6 @@
 #endif
 
 #define cgrect(nsrect) (*(CGRect *)&(nsrect))
-#define COCOA_MOUSE_EVENT \
-        if (isTabletEnabled) { \
-            if (isFullscreen) { \
-                NSSize fs = [[NSScreen mainScreen] frame].size; \
-                kbd_mouse_event((int)(p.x * 0x7FFF / (fs.width - 1)), \
-                                (int)((fs.height - p.y) * 0x7FFF / (fs.height - 1)), \
-                                0, buttons); \
-            } else { \
-                kbd_mouse_event((int)(p.x * 0x7FFF / (screen.width - 1)), \
-                                (int)((screen.height - p.y) * 0x7FFF / (screen.height - 1)), \
-                                0, buttons); \
-            } \
-        } else if (isMouseGrabed) { \
-            kbd_mouse_event((int)[event deltaX], (int)[event deltaY], 0, buttons); \
-        } else { \
-            if (isFullscreen) { \
-                NSSize fs = [[NSScreen mainScreen] frame].size; \
-                kbd_mouse_event((int)(p.x * 0x7FFF / (fs.width - 1)), \
-                                (int)((fs.height - p.y) * 0x7FFF / (fs.height - 1)), \
-                                0, buttons); \
-            } \
-            [NSApp sendEvent:event]; \
-        }
 
 typedef struct {
     int width;
@@ -296,6 +273,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 - (void) enableZooming:(int)w height:(int)h displayState:(DisplayState *)ds;
 #endif
 - (void) qemuHandleEvent:(NSEvent *)event;
+- (void) qemuReportMouseEvent:(NSEvent *)event position:(NSPoint)p buttons:(int)buttons;
 - (void) setAbsoluteEnabled:(BOOL)tIsAbsoluteEnabled;
 - (void) setShuttingDownGuest;
 - (BOOL) isMouseGrabed;
@@ -512,7 +490,7 @@ static int cocoa_keycode_to_qemu(int keycode)
         screen.width = w;
         screen.height = h;
     }
-    [normalWindow center];
+    //[normalWindow center];
     [self setContentDimensions];
     [self setFrame:NSMakeRect(cx, cy, cw, ch)];
 }
@@ -737,7 +715,7 @@ static int cocoa_keycode_to_qemu(int keycode)
                     }
                 }
             }
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSLeftMouseDown:
             if ([event modifierFlags] & NSCommandKeyMask) {
@@ -748,15 +726,15 @@ static int cocoa_keycode_to_qemu(int keycode)
             if ([event modifierFlags] & NSAlternateKeyMask) {
                 buttons |= MOUSE_EVENT_MBUTTON << 1;
             }
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSRightMouseDown:
             buttons |= MOUSE_EVENT_RBUTTON;
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSOtherMouseDown:
             buttons |= MOUSE_EVENT_MBUTTON;
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSLeftMouseDragged:
             mouseX = p.x;
@@ -769,19 +747,19 @@ static int cocoa_keycode_to_qemu(int keycode)
             if ([event modifierFlags] & NSAlternateKeyMask) {
                 buttons |= MOUSE_EVENT_MBUTTON << 1;
             }
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSRightMouseDragged:
             buttons |= MOUSE_EVENT_RBUTTON;
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSOtherMouseDragged:
             buttons |= MOUSE_EVENT_MBUTTON;
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSLeftMouseUp:
             if (isTabletEnabled) {
-                    COCOA_MOUSE_EVENT
+                [self qemuReportMouseEvent:event position:p buttons:buttons];
             } else if (!isMouseGrabed) {
                 if (p.x > -1 && p.x < screen.width && p.y > -1 && p.y < screen.height) {
                     if (cursor_allow_grab) [self grabMouse];
@@ -789,14 +767,14 @@ static int cocoa_keycode_to_qemu(int keycode)
                     [NSApp sendEvent:event];
                 }
             } else {
-                COCOA_MOUSE_EVENT
+                [self qemuReportMouseEvent:event position:p buttons:buttons];
             }
             break;
         case NSRightMouseUp:
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSOtherMouseUp:
-            COCOA_MOUSE_EVENT
+            [self qemuReportMouseEvent:event position:p buttons:buttons];
             break;
         case NSScrollWheel:
             if (isTabletEnabled || isMouseGrabed) {
@@ -826,6 +804,32 @@ static int cocoa_keycode_to_qemu(int keycode)
             break;
         default:
             [NSApp sendEvent:event];
+    }
+}
+
+- (void) qemuReportMouseEvent:(NSEvent *)event position:(NSPoint)p buttons:(int)buttons
+{
+    if (isTabletEnabled) {
+        if (isFullscreen) {
+            NSSize fs = [[NSScreen mainScreen] frame].size;
+            kbd_mouse_event((int)(p.x * 0x7FFF / (fs.width - 1)),
+                            (int)((fs.height - p.y) * 0x7FFF / (fs.height - 1)),
+                            0, buttons);
+        } else {
+            kbd_mouse_event((int)(p.x * 0x7FFF / (screen.width - 1)),
+                            (int)((screen.height - p.y) * 0x7FFF / (screen.height - 1)),
+                            0, buttons);
+        }
+    } else if (isMouseGrabed) {
+        kbd_mouse_event((int)[event deltaX], (int)[event deltaY], 0, buttons);
+    } else {
+        if (isFullscreen) {
+            NSSize fs = [[NSScreen mainScreen] frame].size;
+            kbd_mouse_event((int)(p.x * 0x7FFF / (fs.width - 1)),
+                            (int)((fs.height - p.y) * 0x7FFF / (fs.height - 1)),
+                            0, buttons);
+        }
+        [NSApp sendEvent:event];
     }
 }
 
@@ -1068,6 +1072,18 @@ static int cocoa_keycode_to_qemu(int keycode)
 }
 @end
 
+#if (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_5)
+// Dock Connection
+typedef struct CPSProcessSerNum
+{
+        UInt32                lo;
+        UInt32                hi;
+} CPSProcessSerNum;
+
+extern OSErr    CPSGetCurrentProcess( CPSProcessSerNum *psn);
+extern OSErr    CPSEnableForegroundOperation( CPSProcessSerNum *psn, UInt32 _arg2, UInt32 _arg3, UInt32 _arg4, UInt32 _arg5);
+extern OSErr    CPSSetFrontProcess( CPSProcessSerNum *psn);
+#endif
 
 int main (int argc, const char * argv[])
 {
@@ -1087,10 +1103,17 @@ int main (int argc, const char * argv[])
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
     [NSApplication sharedApplication];
 
+#if (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_5)
+    CPSProcessSerNum PSN;
+    if (!CPSGetCurrentProcess(&PSN))
+        if (!CPSEnableForegroundOperation(&PSN,0x03,0x3C,0x2C,0x1103))
+            if (!CPSSetFrontProcess(&PSN))
+#else
     ProcessSerialNumber PSN;
     if (!GetCurrentProcess(&PSN) &&
         !TransformProcessType(&PSN, kProcessTransformToForegroundApplication) &&
         !SetFrontProcess(&PSN))
+#endif
         [NSApplication sharedApplication];
 
     // Add menus
@@ -1112,7 +1135,11 @@ int main (int argc, const char * argv[])
     menuItem = [[NSMenuItem alloc] initWithTitle:@"Apple" action:nil keyEquivalent:@""];
     [menuItem setSubmenu:menu];
     [[NSApp mainMenu] addItem:menuItem];
-    [NSApp performSelector:@selector(setAppleMenu:) withObject:menu]; // Workaround (this method is private since 10.4+)
+#if (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6)
+    // Workaround (this method is private since 10.4+)
+    // not needed for 10.6+ since first menu is always the app menu
+    [NSApp performSelector:@selector(setAppleMenu:) withObject:menu];
+#endif
 
     // View menu
     menu = [[NSMenu alloc] initWithTitle:@"View"];
