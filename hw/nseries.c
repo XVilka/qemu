@@ -32,6 +32,7 @@
 #include "bt.h"
 #include "net.h"
 #include "loader.h"
+#include "sysbus.h"
 
 //#define MIPID_DEBUG
 
@@ -56,10 +57,10 @@ struct n800_s {
     int keymap[0x80];
     i2c_slave *kbd;
 
-    TUSBState *usb;
+    DeviceState *usb;
     void *retu;
     void *tahvo;
-    void *nand;
+    DeviceState *nand;
 };
 
 /* GPIO pins */
@@ -174,11 +175,10 @@ static void n8x0_nand_setup(struct n800_s *s)
     char *otp_region;
 
     /* Either 0x40 or 0x48 are OK for the device ID */
-    s->nand = onenand_init(NAND_MFR_SAMSUNG, 0x48, 0, 1,
-                           omap2_gpio_in_get(s->cpu->gpif,N8X0_ONENAND_GPIO),
-                           drive_get(IF_MTD, 0, 0));
-    omap_gpmc_attach(s->cpu->gpmc, N8X0_ONENAND_CS, 0, onenand_base_update,
-                     onenand_base_unmap, s->nand, 0);
+    s->nand = onenand_create(NAND_MFR_SAMSUNG, 0x48, 0, 1,
+                             omap2_gpio_in_get(s->cpu->gpif,N8X0_ONENAND_GPIO),
+                             drive_get(IF_MTD, 0, 0));
+    omap_gpmc_attach(s->cpu->gpmc, N8X0_ONENAND_CS, s->nand, 0, 0);
     otp_region = onenand_raw_otp(s->nand);
 
     memcpy(otp_region + 0x000, n8x0_cal_wlan_mac, sizeof(n8x0_cal_wlan_mac));
@@ -888,27 +888,16 @@ static void n8x0_uart_setup(struct n800_s *s)
     omap_uart_attach(s->cpu->uart[BT_UART], radio, "bt-uart");
 }
 
-static void n8x0_usb_power_cb(void *opaque, int line, int level)
-{
-    struct n800_s *s = opaque;
-
-    tusb6010_power(s->usb, level);
-}
-
 static void n8x0_usb_setup(struct n800_s *s)
 {
-    qemu_irq tusb_irq = omap2_gpio_in_get(s->cpu->gpif, N8X0_TUSB_INT_GPIO);
-    qemu_irq tusb_pwr = qemu_allocate_irqs(n8x0_usb_power_cb, s, 1)[0];
-    TUSBState *tusb = tusb6010_init(tusb_irq);
-
+    s->usb = qdev_create(NULL, "tusb6010");
+    sysbus_connect_irq(sysbus_from_qdev(s->usb), 0,
+                       omap2_gpio_in_get(s->cpu->gpif, N8X0_TUSB_INT_GPIO));
     /* Using the NOR interface */
-    omap_gpmc_attach(s->cpu->gpmc, N8X0_USB_ASYNC_CS,
-                     tusb6010_async_io(tusb), NULL, NULL, tusb, 0);
-    omap_gpmc_attach(s->cpu->gpmc, N8X0_USB_SYNC_CS,
-                     tusb6010_sync_io(tusb), NULL, NULL, tusb, 0);
-
-    s->usb = tusb;
-    omap2_gpio_out_set(s->cpu->gpif, N8X0_TUSB_ENABLE_GPIO, tusb_pwr);
+    omap_gpmc_attach(s->cpu->gpmc, N8X0_USB_SYNC_CS, s->usb, 0, 0);
+    omap_gpmc_attach(s->cpu->gpmc, N8X0_USB_ASYNC_CS, s->usb, 1, 0);
+    omap2_gpio_out_set(s->cpu->gpif, N8X0_TUSB_ENABLE_GPIO,
+                       qdev_get_gpio_in(s->usb, 0)); // tusb_power
 }
 
 /* Setup done before the main bootloader starts by some early setup code
@@ -2256,7 +2245,7 @@ static I2CSlaveInfo tpa6130_info = {
 struct n900_s {
     struct omap_mpu_state_s *cpu;
     void *twl4030;
-    void *nand;
+    DeviceState *nand;
     void *lcd;
     struct mipid_s *mipid;
     void *tsc2005;
@@ -2379,10 +2368,8 @@ static void n900_key_handler(void *opaque, int keycode)
 static void n900_reset(void *opaque)
 {
     struct n900_s *s = opaque;
-    omap_gpmc_attach(s->cpu->gpmc, N900_ONENAND_CS, 0, onenand_base_update,
-                     onenand_base_unmap, s->nand, 0);
-    omap_gpmc_attach(s->cpu->gpmc, N900_SMC_CS, smc91c111_iomemtype(s->smc),
-                     NULL, NULL, s->smc, 0);
+    omap_gpmc_attach(s->cpu->gpmc, N900_ONENAND_CS, s->nand, 0, 0);
+    omap_gpmc_attach(s->cpu->gpmc, N900_SMC_CS, s->smc, 0, 0);
     qemu_irq_raise(omap2_gpio_in_get(s->cpu->gpif, N900_KBLOCK_GPIO));
     qemu_set_irq(omap2_gpio_in_get(s->cpu->gpif, N900_HEADPHONE_GPIO), 
                  !s->headphone_connected);
@@ -2511,9 +2498,10 @@ static void n900_init(ram_addr_t ram_size,
     s->mipid->id = 0x101234;
     omap_mcspi_attach(s->cpu->mcspi[0], mipid_txrx, s->mipid, 2);
 
-    s->nand = onenand_init(NAND_MFR_SAMSUNG, 0x40, 0x121, 1,
-                           omap2_gpio_in_get(s->cpu->gpif, N900_ONENAND_GPIO),
-                           dmtd);
+    s->nand = onenand_create(NAND_MFR_SAMSUNG, 0x40, 0x121, 1,
+                             omap2_gpio_in_get(s->cpu->gpif,
+                                               N900_ONENAND_GPIO),
+                             dmtd);
 
     if (dsd) {
         omap3_mmc_attach(s->cpu->omap3_mmc[1], dsd, 0, 1);
@@ -2545,8 +2533,21 @@ static void n900_init(ram_addr_t ram_size,
                           omap2_gpio_in_get(s->cpu->gpif,
                                             N900_LIS302DL_INT2_GPIO));
 
-    s->smc = smc91c111_init_lite(&nd_table[0], /*0x08000000,*/
-                                 omap2_gpio_in_get(s->cpu->gpif, 54));
+    int i;
+    for (i = 0; i < nb_nics; i++) {
+        if (!nd_table[i].model || !strcmp(nd_table[i].model, "smc91c111")) {
+            break;
+        }
+    }
+    if (i < nb_nics) {
+        s->smc = qdev_create(NULL, "smc91c111");
+        qdev_set_nic_properties(s->smc, &nd_table[i]);
+        qdev_init_nofail(s->smc);
+        sysbus_connect_irq(sysbus_from_qdev(s->smc), 0,
+                           omap2_gpio_in_get(s->cpu->gpif, 54));
+    } else {
+        hw_error("%s: no NIC for smc91c111\n", __FUNCTION__);
+    }
 
     qemu_add_kbd_event_handler(n900_key_handler, s);
     qemu_set_display_close_handler(n900_display_close_callback, s);
