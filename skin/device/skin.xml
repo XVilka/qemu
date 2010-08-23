@@ -1,0 +1,22 @@
+<root>
+    <font image="font.png" width="11" height="25"/>
+    <tooltip red="255" green="255" blue="153"/>
+    <landscape>
+        <skin width="871" height="560"/>
+        <bgcolor red="255" blue="255" green="255"/>
+        <background image="background.png" posx="0" posy="50"/>
+        <screen width="800" height="480" posx="37" posy="64"/>
+        <button image="rotate.png" posx="10" posy="4" action="Rotate device (F9)" keycode="67"/> <!-- Key: F9 -->
+        <button image="plus.png" posx="780" posy="4" action="Emulator zoom in (F11)" keycode="87"/> <!-- Key: F11-->
+        <button image="minus.png" posx="825" posy="4" action="Emulator zoom out (F12)" keycode="88"/> <!-- Key: F12-->
+    </landscape>
+    <portrait>
+        <skin width="510" height="921"/>
+        <bgcolor red="255" blue="255" green="255"/>
+        <background image="background_p.png" posx="0" posy="50"/>
+        <screen width="800" height="480" posx="14" posy="87"/>
+        <button image="rotate.png" posx="10" posy="4" action="Rotate device (F9)" keycode="67"/> <!-- Key: F9 -->
+        <button image="plus.png" posx="420" posy="4" action="Emulator zoom in (F11)" keycode="87"/> <!-- Key: F11-->
+        <button image="minus.png" posx="465" posy="4" action="Emulator zoom out (F12)" keycode="88"/> <!-- Key: F12-->
+    </portrait>
+</root>

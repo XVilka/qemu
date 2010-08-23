@@ -1,0 +1,44 @@
+<root>
+    <landscape>
+        <skin width="830" height="520"/>
+        <bgcolor red="255" green="0" blue="128"/>
+        <background image="background.png" posx="0" posy="0"/>
+        <screen posx="15" posy="15"/>
+        
+        <button image="keyswitch.png" posx="700" posy="495" action="Key switch" keycode="59" switch="yes"> <!-- Key: F1 -->
+           <keyboard image="keyboard.png" posx="830" posy="30" switchkey="59" screenwidth="1140" screenheight="520" red="255" green="255" blue="255"/>
+               <key posx="830" posy="30" width="30" height="25" keycode="0x10"/>
+               <key posx="860" posy="30" width="30" height="25" keycode="0x11"/>
+               <key posx="890" posy="30" width="30" height="25" keycode="0x12"/>
+               <key posx="920" posy="30" width="30" height="25" keycode="0x13"/>
+               <key posx="950" posy="30" width="30" height="25" keycode="0x14"/>
+               <key posx="980" posy="30" width="30" height="25" keycode="0x15"/>
+               <key posx="1010" posy="30" width="30" height="25" keycode="0x16"/>
+               <key posx="1040" posy="30" width="30" height="25" keycode="0x17"/>
+               <key posx="1070" posy="30" width="30" height="25" keycode="0x18"/>
+               <key posx="1100" posy="30" width="30" height="25" keycode="0x19"/>
+
+               <key posx="830" posy="55" width="30" height="25" keycode="0x1e"/>
+               <key posx="860" posy="55" width="30" height="25" keycode="0x1f"/>
+               <key posx="890" posy="55" width="30" height="25" keycode="0x20"/>
+               <key posx="920" posy="55" width="30" height="25" keycode="0x21"/>
+               <key posx="950" posy="55" width="30" height="25" keycode="0x22"/>
+               <key posx="980" posy="55" width="30" height="25" keycode="0x23"/>
+               <key posx="1010" posy="55" width="30" height="25" keycode="0x24"/>
+               <key posx="1040" posy="55" width="30" height="25" keycode="0x25"/>
+               <key posx="1070" posy="55" width="30" height="25" keycode="0x26"/>
+               <key posx="1100" posy="55" width="30" height="25" keycode="0x34"/>
+
+               <key posx="830" posy="80" width="30" height="25" keycode="0x2c"/>
+               <key posx="860" posy="80" width="30" height="25" keycode="0x2d"/>
+               <key posx="890" posy="80" width="30" height="25" keycode="0x2e"/>
+               <key posx="920" posy="80" width="30" height="25" keycode="0x2f"/>
+               <key posx="950" posy="80" width="30" height="25" keycode="0x30"/>
+               <key posx="980" posy="80" width="30" height="25" keycode="0x31"/>
+               <key posx="1010" posy="80" width="30" height="25" keycode="0x32"/>
+               <key posx="1040" posy="80" width="30" height="25" keycode="0xcb"/>
+               <key posx="1070" posy="80" width="30" height="25" keycode="0xcd"/>
+               <key posx="1100" posy="80" width="30" height="25" keycode="0x39"/>
+        </button>
+    </landscape>
+</root>

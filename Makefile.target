@@ -357,6 +357,13 @@ obj-arm-y += gles2.o gles2_calls.o
 endif # CONFIG_GLES2
 endif # TARGET_BASE_ARCH==arm
 
+ifdef CONFIG_SKINNING
+VPATH+=:$(SRC_PATH)/skin
+CFLAGS+=-I$(SRC_PATH)/skin $(PNG_CFLAGS)
+LIBS+=$(PNG_LIBS) -lexpat
+obj-y += skinning.o skin_config.o skin_image.o skin_button.o skin_monitor.o
+endif # CONFIG_SKINNING
+
 endif # CONFIG_SOFTMMU
 
 obj-y += $(addprefix ../, $(trace-obj-y))

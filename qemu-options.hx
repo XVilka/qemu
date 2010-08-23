@@ -789,6 +789,23 @@ STEXI
 Start in full screen.
 ETEXI
 
+#if defined(CONFIG_SKINNING)
+DEF("skin", HAS_ARG, QEMU_OPTION_skin,
+    "-skin file      Skin qemu using provided skin configuration file\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -skin @var{file}
+Skin qemu using definitions from @var{file}
+ETEXI
+
+DEF("skinid", HAS_ARG, QEMU_OPTION_skinid,
+    "-skinid id      Use ID tag for the skin\n", QEMU_ARCH_ALL)
+STEXI
+@item -skin @var{id}
+Identify QEMU instance with ID string @var{id}
+ETEXI
+#endif
+
 DEF("g", 1, QEMU_OPTION_g ,
     "-g WxH[xDEPTH]  Set the initial graphical resolution and depth\n",
     QEMU_ARCH_PPC | QEMU_ARCH_SPARC)
@@ -1018,24 +1035,17 @@ STEXI
 @end table
 ETEXI
 
-#ifdef TARGET_ARM
-DEFHEADING(arm target only:)
-#endif
+#ifdef CONFIG_GLES2
 STEXI
 @table @option
 ETEXI
-
-#if(defined TARGET_ARM && defined CONFIG_GLES2)
 DEF("gles2-quality", HAS_ARG, QEMU_OPTION_gles2_quality,
-    "-gles2-quality  set GLES 2.0 rendering quality [0 ... 100]\n")
-#endif
-
-#ifdef TARGET_ARM
-DEFHEADING()
-#endif
+    "-gles2-quality  set GLES 2.0 rendering quality [0 ... 100]\n",
+    QEMU_ARCH_ARM)
 STEXI
 @end table
 ETEXI
+#endif
 
 DEFHEADING(Network options:)
 STEXI
@@ -2340,6 +2350,22 @@ STEXI
 @item -trace
 @findex -trace
 Specify a trace file to log output traces to.
+ETEXI
+#endif
+
+#if defined(CONFIG_SKINNING)
+DEF("rctserver", HAS_ARG, QEMU_OPTION_rctserver,
+    "-rctserver host Connect to specified RCT host.\n", QEMU_ARCH_ALL)
+STEXI
+@item -rctserver @var{host}
+Open RCT connection to server @var{host}
+ETEXI
+DEF("rctport", HAS_ARG, QEMU_OPTION_rctport,
+    "-rctport port   Connect to specified RCT port.\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -rctport @var{d}
+Open RCT connection to port @var{d}
 ETEXI
 #endif
 

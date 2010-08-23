@@ -34,7 +34,9 @@
 #ifndef MAC_OS_X_VERSION_10_5
 #define MAC_OS_X_VERSION_10_5 1050
 #endif
-
+#ifndef MAC_OS_X_VERSION_10_6
+#define MAC_OS_X_VERSION_10_6 1060
+#endif
 
 //#define DEBUG
 
@@ -280,11 +282,19 @@ static int cocoa_keycode_to_qemu(int keycode)
     BOOL isAbsoluteEnabled;
     BOOL isTabletEnabled;
     BOOL isShuttingDownGuest;
+#ifdef CONFIG_SKINNING
+    BOOL isZoomEnabled;
+    int zoomwidth, zoomheight, realwidth, realheight;
+#endif
 }
+- (void) resizeFrameTo:(int)w height:(int)h;
 - (void) resizeContentToWidth:(int)w height:(int)h displayState:(DisplayState *)ds;
 - (void) grabMouse;
 - (void) ungrabMouse;
 - (void) toggleFullScreen:(id)sender;
+#ifdef CONFIG_SKINNING
+- (void) enableZooming:(int)w height:(int)h displayState:(DisplayState *)ds;
+#endif
 - (void) qemuHandleEvent:(NSEvent *)event;
 - (void) setAbsoluteEnabled:(BOOL)tIsAbsoluteEnabled;
 - (void) setShuttingDownGuest;
@@ -295,6 +305,9 @@ static int cocoa_keycode_to_qemu(int keycode)
 - (QEMUScreen) gscreen;
 - (void) updateCaption;
 - (void) checkAndDisplayAltCursor;
+#ifdef CONFIG_SKINNING
+- (BOOL) isFullscreen;
+#endif
 @end
 
 @implementation QemuCocoaView
@@ -363,18 +376,35 @@ static int cocoa_keycode_to_qemu(int keycode)
 
     // get CoreGraphic context
     CGContextRef viewContextRef = [[NSGraphicsContext currentContext] graphicsPort];
+#ifdef CONFIG_SKINNING
+	// For skinning make it look better
+    CGContextSetInterpolationQuality (viewContextRef, kCGInterpolationHigh);
+#else
     CGContextSetInterpolationQuality (viewContextRef, kCGInterpolationNone);
+#endif
     CGContextSetShouldAntialias (viewContextRef, NO);
+
+    int width, height;
+#ifdef CONFIG_SKINNING
+    if (isZoomEnabled && !isFullscreen && is_graphic_console()) {
+        width = realwidth;
+        height = realheight;
+    } else
+#endif
+	{
+        width = screen.width;
+        height = screen.height;
+    }
 
     // draw screen bitmap directly to Core Graphics context
     if (dataProviderRef) {
         [self checkAndDisplayAltCursor];
         CGImageRef imageRef = CGImageCreate(
-            screen.width, //width
-            screen.height, //height
+            width,
+            height,
             screen.bitsPerComponent, //bitsPerComponent
             screen.bitsPerPixel, //bitsPerPixel
-            (screen.width * (screen.bitsPerComponent/2)), //bytesPerRow
+            (width * (screen.bitsPerComponent/2)), //bytesPerRow
 #ifdef __LITTLE_ENDIAN__
             CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB), //colorspace for OS X >= 10.4
             kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst,
@@ -384,7 +414,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 #endif
             dataProviderRef, //provider
             NULL, //decode
-            0, //interpolate
+            TRUE, //interpolate
             kCGRenderingIntentDefault //intent
         );
 // test if host supports "CGImageCreateWithImageInRect" at compile time
@@ -409,7 +439,7 @@ static int cocoa_keycode_to_qemu(int keycode)
             [self getRectsBeingDrawn:&rectList count:&rectCount];
             for (i = 0; i < rectCount; i++) {
                 clipRect.origin.x = floorf(rectList[i].origin.x / cdx);
-                clipRect.origin.y = floorf((float)screen.height - (rectList[i].origin.y + rectList[i].size.height) / cdy);
+                clipRect.origin.y = floorf((float)height - (rectList[i].origin.y + rectList[i].size.height) / cdy);
                 clipRect.size.width = ceilf(rectList[i].size.width / cdx);
                 clipRect.size.height = ceilf(rectList[i].size.height / cdy);
                 clipImageRef = CGImageCreateWithImageInRect(
@@ -436,7 +466,18 @@ static int cocoa_keycode_to_qemu(int keycode)
         ch = screen.height * cdy;
         cx = ([[NSScreen mainScreen] frame].size.width - cw) / 2.0;
         cy = ([[NSScreen mainScreen] frame].size.height - ch) / 2.0;
-    } else {
+    }
+#ifdef CONFIG_SKINNING
+	else if (isZoomEnabled && is_graphic_console()) {
+        cdx = zoomwidth / (float)realwidth;
+        cdy = zoomheight / (float)realheight;
+        cw = zoomwidth;
+        ch = zoomheight;
+        cx = 0;
+        cy = 0;
+    }
+#endif
+    else {
         cx = 0;
         cy = 0;
         cw = screen.width;
@@ -446,9 +487,39 @@ static int cocoa_keycode_to_qemu(int keycode)
     }
 }
 
+- (void) resizeFrameTo:(int)w height:(int)h
+{
+    // update windows
+    if (isFullscreen) {
+        [[fullScreenWindow contentView] setFrame:[[NSScreen mainScreen] frame]];
+        COCOA_DEBUG("resizing window: %4.0f,%4.0f %dx%4.0f\n", [normalWindow frame].origin.x, [normalWindow frame].origin.y - h + screen.height, w, h + [normalWindow frame].size.height - screen.height);
+        [normalWindow setFrame:NSMakeRect([normalWindow frame].origin.x, [normalWindow frame].origin.y - h + screen.height, w, h + [normalWindow frame].size.height - screen.height) display:NO animate:NO];
+#ifdef CONFIG_SKINNING
+    } else if (isZoomEnabled && is_graphic_console()) {
+        [normalWindow setFrame:NSMakeRect([normalWindow frame].origin.x, [normalWindow frame].origin.y - zoomheight + screen.height, zoomwidth, zoomheight + [normalWindow frame].size.height - screen.height) display:NO animate:NO];
+#endif
+    } else {
+        [normalWindow setFrame:NSMakeRect([normalWindow frame].origin.x, [normalWindow frame].origin.y - h + screen.height, w, h + [normalWindow frame].size.height - screen.height) display:YES animate:NO];
+    }
+    [self updateCaption];
+#ifdef CONFIG_SKINNING
+    if (isZoomEnabled && !isFullscreen && is_graphic_console()) {
+        screen.width = zoomwidth;
+        screen.height = zoomheight;
+    } else
+#endif
+    {
+        screen.width = w;
+        screen.height = h;
+    }
+    [normalWindow center];
+    [self setContentDimensions];
+    [self setFrame:NSMakeRect(cx, cy, cw, ch)];
+}
+
 - (void) resizeContentToWidth:(int)w height:(int)h displayState:(DisplayState *)ds
 {
-    COCOA_DEBUG("QemuCocoaView: resizeContent\n");
+    COCOA_DEBUG("QemuCocoaView: resizeContentToWidth\n");
 
     // update screenBuffer
     if (dataProviderRef)
@@ -460,20 +531,9 @@ static int cocoa_keycode_to_qemu(int keycode)
 
     dataRawPtr = is_graphic_console() ? ds_get_data(ds) : 0;
     dataProviderRef = CGDataProviderCreateWithData(NULL, ds_get_data(ds), w * 4 * h, NULL);
-
-    // update windows
-    if (isFullscreen) {
-        [[fullScreenWindow contentView] setFrame:[[NSScreen mainScreen] frame]];
-        [normalWindow setFrame:NSMakeRect([normalWindow frame].origin.x, [normalWindow frame].origin.y - h + screen.height, w, h + [normalWindow frame].size.height - screen.height) display:NO animate:NO];
-    } else {
-        [normalWindow setFrame:NSMakeRect([normalWindow frame].origin.x, [normalWindow frame].origin.y - h + screen.height, w, h + [normalWindow frame].size.height - screen.height) display:YES animate:NO];
-    }
-    [self updateCaption];
-    screen.width = w;
-    screen.height = h;
-	[normalWindow center];
-    [self setContentDimensions];
-    [self setFrame:NSMakeRect(cx, cy, cw, ch)];
+    
+    // resize windows
+    [self resizeFrameTo:w height:h];
 }
 
 - (void) toggleFullScreen:(id)sender
@@ -482,6 +542,11 @@ static int cocoa_keycode_to_qemu(int keycode)
 
     if (isFullscreen) { // switch from fullscreen to desktop
         isFullscreen = FALSE;
+#ifdef CONFIG_SKINNING
+        if (isZoomEnabled && is_graphic_console()) {
+            [self resizeFrameTo:realwidth height:realheight];
+        }
+#endif
         if (isMouseGrabed) [self ungrabMouse];
         [self setContentDimensions];
 // test if host supports "exitFullScreenModeWithOptions" at compile time
@@ -499,6 +564,11 @@ static int cocoa_keycode_to_qemu(int keycode)
         [normalWindow makeKeyAndOrderFront:self];
     } else { // switch from desktop to fullscreen
         isFullscreen = TRUE;
+#ifdef CONFIG_SKINNING
+        if (isZoomEnabled && is_graphic_console()) {
+            [self resizeFrameTo:realwidth height:realheight];
+        }
+#endif
         if (cursor_allow_grab) [self grabMouse];
         [self setContentDimensions];
         [normalWindow orderOut:self];
@@ -527,6 +597,20 @@ static int cocoa_keycode_to_qemu(int keycode)
 #endif
     }
 }
+
+#ifdef CONFIG_SKINNING
+- (void) enableZooming:(int)w height:(int)h displayState:(DisplayState *)ds
+{
+    COCOA_DEBUG("enableZooming, %d x %d\n", w, h);
+    isZoomEnabled = TRUE;
+    zoomwidth = w;
+    zoomheight = h;
+    realwidth = ds_get_width(ds);
+    realheight = ds_get_height(ds);
+    
+    [self resizeContentToWidth:realwidth height:realheight displayState:ds];
+}
+#endif
 
 - (void) qemuHandleEvent:(NSEvent *)event
 {
@@ -801,6 +885,9 @@ static int cocoa_keycode_to_qemu(int keycode)
 - (float) cdx {return cdx;}
 - (float) cdy {return cdy;}
 - (QEMUScreen) gscreen {return screen;}
+#ifdef CONFIG_SKINNING
+- (BOOL) isFullscreen {return isFullscreen;}
+#endif
 @end
 
 
@@ -1065,6 +1152,14 @@ static void cocoa_update(DisplayState *ds, int x, int y, int w, int h)
     NSRect rect;
     if ([cocoaView cdx] == 1.0) {
         rect = NSMakeRect(x, [cocoaView gscreen].height - y - h, w, h);
+#ifdef CONFIG_SKINNING
+    } else if (![cocoaView isFullscreen]) {
+        rect = NSMakeRect(
+            x * [cocoaView cdx],
+            ([cocoaView gscreen].height) - ((y + h) * [cocoaView cdy]),
+            w * [cocoaView cdx],
+            h * [cocoaView cdy]);
+#endif
     } else {
         rect = NSMakeRect(
             x * [cocoaView cdx],
@@ -1113,6 +1208,22 @@ static void cocoa_refresh(DisplayState *ds)
     vga_hw_update();
 }
 
+#ifdef CONFIG_SKINNING
+static void cocoa_enablezoom(DisplayState *ds, int width, int height)
+{
+    [cocoaView enableZooming:width height:height displayState:ds];
+}
+
+static void cocoa_getresolution(int *width, int *height)
+{
+    NSRect screenrect = [[NSScreen mainScreen] frame];
+    COCOA_DEBUG("Screen dim: %f x %f\n", screenrect.size.width, screenrect.size.height);
+    *width = (int)screenrect.size.width;
+    *height = (int)screenrect.size.height;
+}
+
+#endif
+
 static void cocoa_cleanup(void)
 {
     COCOA_DEBUG("qemu_cocoa: cocoa_cleanup\n");
@@ -1129,13 +1240,64 @@ void cocoa_display_init(DisplayState *ds, int full_screen)
     dcl->dpy_update = cocoa_update;
     dcl->dpy_resize = cocoa_resize;
     dcl->dpy_refresh = cocoa_refresh;
-
+#ifdef CONFIG_SKINNING
+    dcl->dpy_enablezoom = cocoa_enablezoom;
+    dcl->dpy_getresolution = cocoa_getresolution;
+#endif
 	register_displaychangelistener(ds, dcl);
+
+#ifdef CONFIG_SKINNING
+	// We need a dummy resize call here, to realize the screensize detection
+    dpy_resize(ds);
+#endif
 
     // register cleanup function
     atexit(cocoa_cleanup);
 }
 
-#ifdef CONFIG_GLHW
-#include "hw/gl/opengl_host_cocoa.m"
+#ifdef CONFIG_SKINNING
+#include "skin/skin_image.h"
+void *skin_loadpng(const char *fn, unsigned *w, unsigned *h)
+{
+    CGDataProviderRef dpRef = CGDataProviderCreateWithFilename(fn);
+    if (dpRef == NULL) {
+        fprintf(stderr, "%s: failed to create data provider\n", __FUNCTION__);
+        return NULL;
+    }
+    CGImageRef iRef = CGImageCreateWithPNGDataProvider(dpRef, NULL, false,
+                                                       kCGRenderingIntentDefault);
+    CGDataProviderRelease(dpRef);
+    if (iRef == NULL) {
+        fprintf(stderr, "%s: failed to create image\n", __FUNCTION__);
+        return NULL;
+    }
+    *w = CGImageGetWidth(iRef);
+    *h = CGImageGetHeight(iRef);
+    void *data = NULL;
+    CGColorSpaceRef csRef = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+    if (csRef == NULL) {
+        fprintf(stderr, "%s: failed to allocate color space\n", __FUNCTION__);
+    } else {
+        data = qemu_mallocz(*w * *h * 4);
+        if (data == NULL) {
+            fprintf(stderr, "%s: failed to allocate memory\n", __FUNCTION__);
+        } else {
+            CGContextRef cRef = CGBitmapContextCreate(data, *w, *h, 8, *w * 4, csRef,
+                                                      kCGImageAlphaPremultipliedFirst |
+                                                      kCGBitmapByteOrder32Little);
+            if (cRef == NULL) {
+                fprintf(stderr, "%s: failed to create context\n", __FUNCTION__);
+                qemu_free(data);
+                data = NULL;
+            } else {
+                CGRect rect = {{0, 0}, {*w, *h}};
+                CGContextDrawImage(cRef, rect, iRef);
+                CGContextRelease(cRef);
+            }
+        }
+        CGColorSpaceRelease(csRef);
+    }
+    CGImageRelease(iRef);
+    return data;
+}
 #endif

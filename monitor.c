@@ -62,6 +62,10 @@
 #endif
 #include "ui/qemu-spice.h"
 
+#ifdef CONFIG_SKINNING
+#include "skin/skin_monitor.h"
+#endif
+
 //#define DEBUG
 //#define DEBUG_COMPLETION
 
@@ -3065,6 +3069,56 @@ static const mon_cmd_t info_cmds[] = {
         .params     = "",
         .help       = "show available trace-events & their state",
         .mhandler.info = do_info_trace_events,
+    },
+#endif
+#ifdef CONFIG_SKINNING
+    {
+        .name       = "zoom",
+        .args_type  = "",
+        .params     = "",
+        .help       = "show zoom level",
+        .user_print = do_info_zoom_print,
+        .mhandler.info_new = do_info_zoom,
+    },
+    {
+        .name       = "rotate",
+        .args_type  = "",
+        .params     = "",
+        .help       = "show display rotation",
+        .user_print = do_info_rotate_print,
+        .mhandler.info_new = do_info_rotate,
+    },
+    {
+        .name       = "keyboard",
+        .args_type  = "",
+        .params     = "",
+        .help       = "show keyboard visibility",
+        .user_print = do_info_keyboard_print,
+        .mhandler.info_new = do_info_keyboard,
+    },
+    {
+        .name       = "rct",
+        .args_type  = "",
+        .params     = "",
+        .help       = "show RCT status",
+        .user_print = do_info_rct_print,
+        .mhandler.info_new = do_info_rct,
+    },
+    {
+        .name       = "skin",
+        .args_type  = "",
+        .params     = "",
+        .help       = "show currently loaded skin",
+        .user_print = do_info_skin_print,
+        .mhandler.info_new = do_info_skin,
+    },
+    {
+        .name       = "skin_id",
+        .args_type  = "",
+        .params     = "",
+        .help       = "show current skin ID",
+        .user_print = do_info_skin_id_print,
+        .mhandler.info_new = do_info_skin_id,
     },
 #endif
     {

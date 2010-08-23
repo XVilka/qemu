@@ -62,12 +62,17 @@ static uint8_t allocator;
 static SDL_PixelFormat host_format;
 static int scaling_active = 0;
 static int mouseX = 0, mouseY = 0;
+
+#ifdef CONFIG_SKINNING
+void skin_toggle_full_screen(DisplayState *ds);
+static int host_display_width;
+static int host_display_height;
+#endif
 static int shutting_down_guest = 0;
 static Notifier mouse_mode_notifier;
 
 static void sdl_update(DisplayState *ds, int x, int y, int w, int h)
 {
-    //    printf("updating x=%d y=%d w=%d h=%d\n", x, y, w, h);
     SDL_Rect rec;
     rec.x = x;
     rec.y = y;
@@ -128,12 +133,11 @@ static void sdl_setdata(DisplayState *ds)
 }
 
 static void do_sdl_resize(int new_width, int new_height, int bpp)
-{
-    int flags;
-
-    //    printf("resizing to %d %d\n", w, h);
-
-    flags = SDL_HWSURFACE|SDL_ASYNCBLIT|SDL_HWACCEL|SDL_RESIZABLE;
+{   
+    int flags = SDL_HWSURFACE|SDL_ASYNCBLIT|SDL_HWACCEL;
+#ifndef CONFIG_SKINNING
+	flags |= SDL_RESIZABLE;
+#endif
     if (gui_fullscreen)
         flags |= SDL_FULLSCREEN;
     if (gui_noframe)
@@ -154,7 +158,8 @@ static void sdl_resize(DisplayState *ds)
     if  (!allocator) {
         if (!scaling_active)
             do_sdl_resize(ds_get_width(ds), ds_get_height(ds), 0);
-        else if (real_screen->format->BitsPerPixel != ds_get_bits_per_pixel(ds))
+        else if (real_screen->format->BitsPerPixel != 
+                ds_get_bits_per_pixel(ds))
             do_sdl_resize(real_screen->w, real_screen->h, ds_get_bits_per_pixel(ds));
         sdl_setdata(ds);
     } else {
@@ -164,6 +169,32 @@ static void sdl_resize(DisplayState *ds)
         }
     }
 }
+
+#ifdef CONFIG_SKINNING
+static void sdl_scale_window(DisplayState *ds, int width, int height)
+{
+    // Alter window size by zooming skin images in or out
+    if (real_screen) {
+        int bpp = real_screen->format->BitsPerPixel;
+        if (bpp != 16 && bpp != 32)
+            bpp = 32;
+        do_sdl_resize(width, height, bpp);
+        scaling_active = 1;
+        if (!is_buffer_shared(ds->surface)) {
+            ds->surface = qemu_resize_displaysurface(ds, ds_get_width(ds), ds_get_height(ds));
+            dpy_resize(ds);
+        }
+        vga_hw_invalidate();
+        vga_hw_update();
+    }
+}
+
+static void sdl_getresolution(int *width, int *height)
+{
+    if (width) *width = host_display_width;
+    if (height) *height = host_display_height;
+}
+#endif
 
 static PixelFormat sdl_to_qemu_pixelformat(SDL_PixelFormat *sdl_pf)
 {
@@ -592,6 +623,10 @@ static void toggle_full_screen(DisplayState *ds)
     }
     vga_hw_invalidate();
     vga_hw_update();
+
+#ifdef CONFIG_SKINNING
+    skin_toggle_full_screen(ds);
+#endif
 }
 
 static void sdl_refresh(DisplayState *ds)
@@ -896,6 +931,10 @@ void sdl_display_init(DisplayState *ds, int full_screen, int no_frame)
     }
     vi = SDL_GetVideoInfo();
     host_format = *(vi->vfmt);
+#ifdef CONFIG_SKINNING
+    host_display_width = vi->current_w;
+    host_display_height = vi->current_h;
+#endif
 
     dcl = qemu_mallocz(sizeof(DisplayChangeListener));
     dcl->dpy_update = sdl_update;
@@ -903,6 +942,10 @@ void sdl_display_init(DisplayState *ds, int full_screen, int no_frame)
     dcl->dpy_refresh = sdl_refresh;
     dcl->dpy_setdata = sdl_setdata;
     dcl->dpy_fill = sdl_fill;
+#ifdef CONFIG_SKINNING
+    dcl->dpy_enablezoom = sdl_scale_window;
+    dcl->dpy_getresolution = sdl_getresolution;
+#endif
     ds->mouse_set = sdl_mouse_warp;
     ds->cursor_define = sdl_mouse_define;
     register_displaychangelistener(ds, dcl);

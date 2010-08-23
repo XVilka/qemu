@@ -1,0 +1,122 @@
+<root>
+    <font image="font2.png" width="13" height="25"/>
+    <tooltip red="255" green="255" blue="180"/>
+    <landscape>
+    <!--    <skin width="1155" height="874"/> -->
+        <skin width="1220" height="645" rctwidth="1155"/>
+        <bgcolor red="255" green="255" blue="255"/>
+        <background image="n900.png" posx="0" posy="0"/>
+        <screen width="800" height="480" posx="169" posy="86"/>
+        <button image="powerbtn.png" posx="535" posy="1" action="Power" keycode="1"/> <!-- Key: ESC -->
+        <button image="keyboardbtn.png" posx="1020" posy="510" action="Keyboard slider" keycode="59" switch="yes" defaultstate="on" rcthide="yes"> <!-- Key: F1 -->
+            <keyboard image="n900_keyboard_and_corners_anim.png" animated="yes" posx="4" posy="575" switchkey="59" screenwidth="1220" screenheight="874" rctscreenwidth="1155" red="0" green="0" blue="255">
+                <key action="Ctrl/Sym" posx="102" posy="653" width="72" height="58" keycode="0x1d"/>
+                <key action="Q/1" posx="177" posy="653" width="72" height="58" keycode="0x10"/>
+                <key action="W/2" posx="252" posy="653" width="72" height="58" keycode="0x11"/>
+                <key action="E/3" posx="327" posy="653" width="72" height="58" keycode="0x12"/>
+                <key action="R/4" posx="402" posy="653" width="71" height="58" keycode="0x13"/>
+                <key action="T/5" posx="475" posy="653" width="72" height="58" keycode="0x14"/>
+                <key action="Y/6" posx="549" posy="653" width="72" height="58" keycode="0x15"/>
+                <key action="U/7" posx="622" posy="653" width="72" height="58" keycode="0x16"/>
+                <key action="I/8" posx="694" posy="653" width="72" height="58" keycode="0x17"/>
+                <key action="O/9" posx="766" posy="654" width="72" height="58" keycode="0x18"/>
+                <key action="P/0" posx="838" posy="654" width="72" height="58" keycode="0x19"/>
+                <key action=",/=" posx="910" posy="655" width="72" height="58" keycode="0x33"/>
+                <key action="Backspace" posx="982" posy="656" width="72" height="58" keycode="0x0e"/>
+                <key action="LeftAlt" posx="102" posy="719" width="72" height="58" keycode="0x38"/>
+                <key action="A/*" posx="177" posy="717" width="72" height="58" keycode="0x1e"/>
+                <key action="S/+" posx="252" posy="717" width="72" height="58" keycode="0x1f"/>
+                <key action="D/#" posx="327" posy="717" width="72" height="58" keycode="0x20"/>
+                <key action="F/-" posx="402" posy="717" width="72" height="58" keycode="0x21"/>
+                <key action="G/_" posx="475" posy="717" width="72" height="58" keycode="0x22"/>
+                <key action="H/(" posx="549" posy="717" width="72" height="58" keycode="0x23"/>
+                <key action="J/)" posx="623" posy="717" width="72" height="58" keycode="0x24"/>
+                <key action="K/et" posx="694" posy="717" width="72" height="58" keycode="0x25"/>
+                <key action="L/!" posx="766" posy="718" width="72" height="58" keycode="0x26"/>
+                <key action="./?" posx="838" posy="718" width="72" height="58" keycode="0x34"/>
+                <key action="Up" posx="910" posy="718" width="72" height="58" keycode="0xc8"/>
+                <key action="Enter" posx="982" posy="718" width="71" height="58" keycode="0x1c"/>
+                <key action="Shift" posx="102" posy="778" width="72" height="58" keycode="0x2a"/>
+                <key action="Z/£" posx="177" posy="778" width="72" height="58" keycode="0x2c"/>
+                <key action="X/$" posx="252" posy="778" width="72" height="58" keycode="0x2d"/>
+                <key action="C/€" posx="327" posy="778" width="72" height="58" keycode="0x2e"/>
+                <key action="V//" posx="402" posy="778" width="72" height="58" keycode="0x2f"/>
+                <key action="B/\" posx="475" posy="778" width="72" height="58" keycode="0x30"/>
+                <key action="N/''" posx="549" posy="778" width="72" height="58" keycode="0x31"/>
+                <key action="M/'" posx="623" posy="778" width="72" height="58" keycode="0x32"/>
+                <key action="Space/@" posx="694" posy="778" width="144" height="58" keycode="0x39"/>
+                <key action="Left" posx="838" posy="778" width="72" height="58" keycode="0xcb"/>
+                <key action="Down" posx="910" posy="778" width="72" height="58" keycode="0xd0"/>
+                <key action="Right" posx="982" posy="778" width="72" height="58" keycode="0xcd"/>
+            </keyboard>
+        </button>
+        <button image="keylock.png" posx="1080" posy="265" action="Key lock" keycode="60"/> <!-- Key: F2 -->
+        <button image="camera_cover.png" posx="40" posy="115" action="Open/Close camera cover" keycode="61" switch="yes" defaultstate="off"/> <!-- Key: F3 -->
+        <button image="camera_focus.png" posx="759" posy="1" action="Camera focus" keycode="62"/> <!-- Key: F4 -->
+        <button image="camera.png" posx="840" posy="1" action="Camera shutter" keycode="63"></button> <!-- Key: F5-->
+        <button image="volume_down.png" posx="193" posy="1" action="Volume/Zoom down" keycode="65"/> <!-- Key: F7 -->
+        <button image="volume_up.png" posx="268" posy="1" action="Volume/Zoom up" keycode="66"/> <!-- Key: F8 -->
+        <button image="rotate.png" posx="1020" posy="420" action="Rotate the screen to portrait" keycode="67" switch="yes" rcthide="yes"/> <!-- Key: F9 -->
+        <button image="zoom_out.png" posx="1161" posy="71" action="Emulator zoom out" keycode="88" rcthide="yes"/>
+        <button image="zoom_in.png" posx="1140" posy="10" action="Emulator zoom in" keycode="87" rcthide="yes"/>
+    </landscape>
+    <portrait>
+     <!--   <skin width="874" height="1155"/> -->
+        <skin width="707" height="1155"/>
+        <bgcolor red="255" green="255" blue="255"/>
+        <background image="n900_portrait.png" posy="0" posx="0"/>
+        <screen posy="169" posx="71"/>
+        <button image="powerbtn_portrait.png" posy="535" posx="599" action="Power" keycode="1"/> <!-- Key: ESC -->
+        <button image="keyboardbtn_portrait.png" posy="1020" posx="62" action="Keyboard slider" keycode="59" switch="yes" rcthide="yes"> <!-- Key: F1 -->
+            <keyboard image="n900_keyboard_and_corners_portrait_anim.png" animated="yes" posy="4" posx="0" switchkey="59" screenwidth="939" screenheight="1155" red="0" green="0" blue="255" offset="233">
+                <key action="Ctrl/Sym" posy="102" posx="162" width="58" height="72" keycode="0x1d"/>
+                <key action="Q/1" posy="177" posx="162" width="58" height="72" keycode="0x10"/>
+                <key action="W/2" posy="252" posx="162" width="58" height="72" keycode="0x11"/>
+                <key action="E/3" posy="327" posx="162" width="58" height="72" keycode="0x12"/>
+                <key action="R/4" posy="402" posx="161" width="58" height="72" keycode="0x13"/>
+                <key action="T/5" posy="475" posx="160" width="58" height="72" keycode="0x14"/>
+                <key action="Y/6" posy="549" posx="160" width="58" height="72" keycode="0x15"/>
+                <key action="U/7" posy="622" posx="160" width="58" height="72" keycode="0x16"/>
+                <key action="I/8" posy="694" posx="160" width="58" height="72" keycode="0x17"/>
+                <key action="O/9" posy="766" posx="160" width="58" height="72" keycode="0x18"/>
+                <key action="P/0" posy="838" posx="160" width="58" height="72" keycode="0x19"/>
+                <key action=",/=" posy="910" posx="160" width="58" height="72" keycode="0x33"/>
+                <key action="Backspace" posy="982" posx="160" width="58" height="72" keycode="0x0e"/>
+                <key action="LeftAlt" posy="102" posx="98" width="58" height="72" keycode="0x38"/>
+                <key action="A/*" posy="177" posx="98" width="58" height="72" keycode="0x1e"/>
+                <key action="S/+" posy="252" posx="98" width="58" height="72" keycode="0x1f"/>
+                <key action="D/#" posy="327" posx="98" width="58" height="72" keycode="0x20"/>
+                <key action="F/-" posy="402" posx="98" width="58" height="72" keycode="0x21"/>
+                <key action="G/_" posy="475" posx="98" width="58" height="72" keycode="0x22"/>
+                <key action="H/(" posy="549" posx="98" width="58" height="72" keycode="0x23"/>
+                <key action="J/)" posy="622" posx="98" width="58" height="72" keycode="0x24"/>
+                <key action="K/et" posy="694" posx="98" width="58" height="72" keycode="0x25"/>
+                <key action="L/!" posy="766" posx="98" width="58" height="72" keycode="0x26"/>
+                <key action="./?" posy="838" posx="98" width="58" height="72" keycode="0x34"/>
+                <key action="Up" posy="910" posx="98" width="58" height="72" keycode="0xc8"/>
+                <key action="Enter" posy="982" posx="98" width="58" height="72" keycode="0x1c"/>
+                <key action="Shift" posy="102" posx="36" width="58" height="72" keycode="0x2a"/>                                    
+                <key action="Z/£" posy="177" posx="36" width="58" height="72" keycode="0x2c"/>
+                <key action="X/$" posy="252" posx="36" width="58" height="72" keycode="0x2d"/>
+                <key action="C/€" posy="327" posx="36" width="58" height="72" keycode="0x2e"/>
+                <key action="V//" posy="402" posx="36" width="58" height="72" keycode="0x2f"/>
+                <key action="B/\" posy="475" posx="36" width="58" height="72" keycode="0x30"/>
+                <key action="N/''" posy="549" posx="36" width="58" height="72" keycode="0x31"/>
+                <key action="M/'" posy="622" posx="36" width="58" height="72" keycode="0x32"/>
+                <key action="Space/@" posy="694" posx="36" width="58" height="144" keycode="0x39"/>
+                <key action="Left" posy="838" posx="36" width="58" height="72" keycode="0xcb"/>
+                <key action="Down" posy="910" posx="36" width="58" height="72" keycode="0xd0"/>
+                <key action="Right" posy="982" posx="36" width="58" height="72" keycode="0xcd"/>
+            </keyboard>
+        </button>
+        <button image="keylock_portrait.png" posy="1080" posx="265" action="Key lock" keycode="60"/> <!-- Key: F2 -->
+        <button image="camera_cover_portrait.png" posy="40" posx="467" action="Camera cover" keycode="61" switch="yes"/> <!-- Key: F3 -->
+        <button image="camera_focus_portrait.png" posy="759" posx="599" action="Camera focus" keycode="62"/> <!-- Key: F4 -->
+        <button image="camera_portrait.png" posy="840" posx="599" action="Camera picture" keycode="63"></button> <!-- Key: F5-->
+        <button image="volume_down_portrait.png" posy="193" posx="599" action="Volume/Zoom down" keycode="65"/> <!-- Key: F7 -->
+        <button image="volume_up_portrait.png" posy="268" posx="599" action="Volume/Zoom up" keycode="66"/> <!-- Key: F8 -->
+        <button image="rotate_portrait.png" posy="1020" posx="250" action="Rotate the screen to landscape" keycode="67" switch="yes" rcthide="yes"/> <!-- Key: F9 -->
+        <button image="zoom_out.png" posx="647" posy="71" action="Emulator zoom out" keycode="88" rcthide="yes"/>
+        <button image="zoom_in.png" posx="626" posy="10" action="Emulator zoom in" keycode="87" rcthide="yes"/>
+    </portrait>
+</root>

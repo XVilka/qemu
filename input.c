@@ -28,6 +28,13 @@
 #include "console.h"
 #include "qjson.h"
 
+#ifdef CONFIG_SKINNING
+QEMUPutMouseEntry *original_qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+                                                         void *opaque, int absolute,
+                                                         const char *name);
+#undef qemu_add_mouse_event_handler
+#define qemu_add_mouse_event_handler original_qemu_add_mouse_event_handler
+#endif 
 static QTAILQ_HEAD(, QEMUPutKBDEntry) kbd_handlers =
     QTAILQ_HEAD_INITIALIZER(kbd_handlers);
 static QTAILQ_HEAD(, QEMUPutLEDEntry) led_handlers = QTAILQ_HEAD_INITIALIZER(led_handlers);
@@ -163,7 +170,9 @@ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state)
     QEMUPutMouseEntry *entry;
     QEMUPutMouseEvent *mouse_event;
     void *mouse_event_opaque;
+#ifndef CONFIG_SKINNING
     int width;
+#endif
 
     if (QTAILQ_EMPTY(&mouse_handlers)) {
         return;
@@ -175,6 +184,7 @@ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state)
     mouse_event_opaque = entry->qemu_put_mouse_event_opaque;
 
     if (mouse_event) {
+#ifndef CONFIG_SKINNING
         if (graphic_rotate) {
             if (entry->qemu_put_mouse_event_absolute)
                 width = 0x7fff;
@@ -183,6 +193,7 @@ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state)
             mouse_event(mouse_event_opaque,
                         width - dy, dx, dz, buttons_state);
         } else
+#endif
             mouse_event(mouse_event_opaque,
                         dx, dy, dz, buttons_state);
     }

@@ -2276,6 +2276,21 @@ struct n900_s {
     QEMUTimer *shutdown_timer;
 };
 
+#ifdef CONFIG_SKINNING
+#include "skin_switchstate.h"
+static int n900_switchstate_callback(void *opaque, const int keycode)
+{
+    struct n900_s *s = opaque;
+    switch (keycode) {
+        case 0x3b: return s->slide_open;
+        case 0x3d: return s->camera_cover_open;
+        case 0x40: return s->headphone_connected;
+        default: break;
+    }
+    return -1;
+}
+#endif
+
 /* this takes care of the keys which are not located on the
  * n900 keypad (note that volume up/down keys are handled by
  * the keypad eventhough the keys are not located on the keypad)
@@ -2371,15 +2386,19 @@ static void n900_reset(void *opaque)
     omap_gpmc_attach(s->cpu->gpmc, N900_SMC_CS, smc91c111_iomemtype(s->smc),
                      NULL, NULL, s->smc, 0);
     qemu_irq_raise(omap2_gpio_in_get(s->cpu->gpif, N900_KBLOCK_GPIO));
-    qemu_irq_raise(omap2_gpio_in_get(s->cpu->gpif, N900_HEADPHONE_GPIO));
+    qemu_set_irq(omap2_gpio_in_get(s->cpu->gpif, N900_HEADPHONE_GPIO), 
+                 !s->headphone_connected);
     qemu_irq_raise(omap2_gpio_in_get(s->cpu->gpif, N900_CAMLAUNCH_GPIO));
     qemu_irq_raise(omap2_gpio_in_get(s->cpu->gpif, N900_CAMFOCUS_GPIO));
-    qemu_irq_lower(omap2_gpio_in_get(s->cpu->gpif, N900_CAMCOVER_GPIO));
-    qemu_irq_lower(omap2_gpio_in_get(s->cpu->gpif, N900_SLIDE_GPIO));
-    s->slide_open = 1;
-    s->camera_cover_open = 0;
-    s->headphone_connected = 0;
+    qemu_set_irq(omap2_gpio_in_get(s->cpu->gpif, N900_CAMCOVER_GPIO),
+                 s->camera_cover_open);
+    qemu_set_irq(omap2_gpio_in_get(s->cpu->gpif, N900_SLIDE_GPIO),
+                 !s->slide_open);
     omap3_boot_rom_emu(s->cpu);
+    /* FIXME: hack - prevent reboot if shutdown was requested */
+    if (s->shutdown_timer) {
+        qemu_system_shutdown_request();
+    }
 }
 
 static void n900_shutdown_timer_callback(void *opaque)
@@ -2537,6 +2556,14 @@ static void n900_init(ram_addr_t ram_size,
 
 #ifdef CONFIG_GLES2
     s->gles2 = gles2_init(s->cpu->env);
+#endif
+
+    s->slide_open = 1;
+    s->camera_cover_open = 0;
+    s->headphone_connected = 0;
+    
+#ifdef CONFIG_SKINNING
+    qemu_skin_add_switchstate_callback((switchstate_callback *)n900_switchstate_callback, s);
 #endif
     qemu_register_reset(n900_reset, s);
     n900_reset(s);

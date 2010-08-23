@@ -1178,6 +1178,101 @@ STEXI
 Set the encrypted device @var{device} password to @var{password}
 ETEXI
 
+#if defined(CONFIG_SKINNING)
+    {
+        .name       = "zoom",
+        .args_type  = "level:i",
+        .params     = "level",
+        .help       = "set display zoom level",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_set_zoom,
+    },
+
+STEXI
+@item zoom @var{level}
+@findex zoom
+Set zoom level to @var{level} percent.
+ETEXI
+
+    {
+        .name       = "rotate",
+        .args_type  = "state:s?",
+        .params     = "[on|off|toggle]",
+        .help       = "rotate display by 90 degrees",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_set_rotate,
+    },
+
+STEXI
+@item rotate [on|off|toggle]
+@findex rotate
+Rotate display by 90 degrees.
+If called with option off, the display is restored to its original orientation.
+ETEXI
+
+    {
+        .name       = "keyboard",
+        .args_type  = "state:s?",
+        .params     = "[on|off|toggle]",
+        .help       = "set keyboard visiblity status",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_set_keyboard,
+    },
+
+STEXI
+@item keyboard [off] [toggle]
+@findex keyboard
+Set keyboard visibility status.
+ETEXI
+
+    {
+        .name       = "rct",
+        .args_type  = "state:s?",
+        .params     = "[on|off|toggle]",
+        .help       = "enable RCT control",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_set_rct,
+    },
+
+STEXI
+@item rct [on|off|toggle]
+@findex rct
+Enable RCT control. This has the effect of hiding rotate,
+keyboard and zoom buttons from the skin, as their functionality
+is taken over by RCT.
+ETEXI
+
+    {
+        .name       = "skin",
+        .args_type  = "filename:F",
+        .params     = "filename",
+        .help       = "switch to skin defined in 'filename'",
+        .user_print = monitor_user_noop,      
+        .mhandler.cmd_new = do_set_skin,
+    },
+
+STEXI
+@item skin @var{filename}
+@findex skin
+Load skin defined in the file @var{filename}.
+ETEXI
+
+    {
+        .name       = "skin_id",
+        .args_type  = "id:s",
+        .params     = "id",
+        .help       = "set skin identification string",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_set_skin_id,
+    },
+
+STEXI
+@item skin_id @var{id}
+@findex skin
+Set skin identification string to @var{id}.
+ETEXI
+#endif
+
     {
         .name       = "set_password",
         .args_type  = "protocol:s,password:s,connected:s?",
@@ -1325,6 +1420,23 @@ STEXI
 show contents of trace buffer
 @item info trace-events
 show available trace events and their state
+ETEXI
+#endif
+
+#ifdef CONFIG_SKINNING
+STEXI
+@item info zoom
+show zoom level
+@item info rotate
+show display rotation
+@item info keyboard
+show keyboard visibility
+@item info rct
+show visibility status of zoom, rotate and keyboard buttons
+@item info skin
+show currently loaded skin definition
+@item info skin_id
+show current skin identification string
 ETEXI
 #endif
 

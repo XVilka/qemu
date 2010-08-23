@@ -171,6 +171,8 @@ check_utests="no"
 user_pie="no"
 gles2="no"
 gles2_static="no"
+skinning="no"
+libpng_config="libpng-config"
 zero_malloc=""
 trace_backend="nop"
 trace_file="trace"
@@ -721,6 +723,10 @@ for opt do
   ;;
   --gles2dir=*) gles2dir="$optarg"
   ;;
+  --enable-skinning) skinning="yes"
+  ;;
+  --png-config=*) libpng_config="$optarg"
+  ;;
   --*dir)
   ;;
   --disable-rbd) rbd="no"
@@ -931,6 +937,8 @@ echo "  --enable-rbd             enable building the rados block device (rbd)"
 echo "  --enable-gles2           ARM target: Enable OpenGL ES 2.0 hardware accelerator"
 echo "  --enable-gles2-static    ARM target: Link OpenGL ES 2.0 hardware accelerator statically"
 echo "  --gles2dir=PATH          prefix where dgles2 is installed"
+echo "  --enable-skinning        Enabled skinning functionality for Qemu"
+echo "  --png-config             Specify PNG lib version config tool (skinning only)"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -1284,6 +1292,25 @@ EOF
   fi
   libs_softmmu="$sdl_libs $libs_softmmu"
 fi
+
+##########################################
+# LIBPNG detection
+
+libpng=no
+if test "$cocoa" = "no" ; then
+if test "$skinning" = "yes" ; then
+cat > $TMPC << EOF
+#include <png.h>
+int main( void ) { return png_access_version_number(); }
+EOF
+# FIXME: libpng_config seems to fail to add the -lz flag itself
+if $cc $ARCH_CFLAGS $CFLAGS $LDFLAGS -o $TMPE ${OS_CFLAGS} `$libpng_config --cflags 2> /dev/null` $TMPC `$libpng_config --ldflags 2> /dev/null` > /dev/null -lz 2> /dev/null ; then
+    libpng=yes
+else
+    feature_not_found "PNG"
+fi # libpng compile test
+fi # skinning enabled
+fi # cocoa disabled
 
 ##########################################
 # VNC TLS detection
@@ -2476,6 +2503,8 @@ echo "xfsctl support    $xfs"
 echo "gles2 support     $gles2"
 echo "gles2 static      $gles2_static"
 echo "dgles2 prefix     $gles2dir"
+echo "Skinning support  $skinning"
+echo "libpng support    $libpng"
 
 if test $sdl_too_old = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -2746,12 +2775,21 @@ fi
 
 if test "$spice" = "yes" ; then
   echo "CONFIG_SPICE=y" >> $config_host_mak
+fi
 if test "$gles2" = "yes" ; then
   echo "CONFIG_GLES2=y" >> $config_host_mak
-if test "$gles2_static" = "yes" ; then
-  echo "CONFIG_GLES2_STATIC=y" >> $config_host_mak
-fi
+  if test "$gles2_static" = "yes" ; then
+      echo "CONFIG_GLES2_STATIC=y" >> $config_host_mak
+  fi
   echo "DGLES2=$gles2dir" >> $config_host_mak
+fi
+if test "$skinning" = "yes" ; then
+  echo "CONFIG_SKINNING=y" >>$config_host_mak
+fi
+if test "$libpng" = "yes" ; then
+  echo "CONFIG_PNG=yes" >> $config_host_mak
+  echo "PNG_LIBS=`$libpng_config --ldflags`" >> $config_host_mak
+  echo "PNG_CFLAGS=`$libpng_config --cflags`" >> $config_host_mak
 fi
 
 # XXX: suppress that

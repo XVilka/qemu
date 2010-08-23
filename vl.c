@@ -261,6 +261,11 @@ static NotifierList machine_init_done_notifiers =
 int kvm_allowed = 0;
 uint32_t xen_domid;
 enum xen_mode xen_mode = XEN_EMULATE;
+#ifdef CONFIG_SKINNING
+int skinning_init(const char *skin_file, const char *id, int portrait);
+const char *skin_file = NULL;
+const char *skin_id = NULL;
+#endif /* CONFIG_SKINNING */
 
 #ifdef CONFIG_GLES2
 int gles2_quality = 100;
@@ -2061,6 +2066,14 @@ int main(int argc, char **argv, char **envp)
 	        break;
             case QEMU_OPTION_mtdblock:
                 drive_add(optarg, MTD_ALIAS);
+#ifdef CONFIG_SKINNING
+                // use mtdblock filename as default ID
+                if (!skin_id) {
+                    skin_id = strrchr(optarg, '/');
+                    if (!skin_id++)
+                        skin_id = optarg;
+                }
+#endif
                 break;
             case QEMU_OPTION_sd:
                 drive_add(optarg, SD_ALIAS, sd_device_index++);
@@ -2491,6 +2504,14 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_full_screen:
                 full_screen = 1;
                 break;
+#ifdef CONFIG_SKINNING
+            case QEMU_OPTION_skin:
+                skin_file = optarg;
+                break;
+            case QEMU_OPTION_skinid:
+                skin_id = optarg;
+                break;
+#endif /* CONFIG_SKINNING */
 #ifdef CONFIG_SDL
             case QEMU_OPTION_no_frame:
                 no_frame = 1;
@@ -2744,6 +2765,13 @@ int main(int argc, char **argv, char **envp)
         }
     }
     loc_set_none();
+
+#ifdef CONFIG_SKINNING
+    if( skin_file && skinning_init(skin_file, skin_id, graphic_rotate) ) {
+        fprintf( stderr, "Skin could not be initialised\n");
+        exit(1);
+    }
+#endif
 
     /* If no data_dir is specified then try to find it relative to the
        executable path.  */
