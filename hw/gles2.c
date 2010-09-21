@@ -599,7 +599,7 @@ static void* gles2_client_worker(void *opaque)
             GLES2_PRINT("WORKER(%d): Calling function %s (%p)...\n",
                         client->nr, client->call->name, client->call);
             client->call->callback(client->s, &d, client);
-#if(GLES_DEBUG == 1)
+#if(GLES2_DEBUG == 1)
             if (client->arrays) {
                 if((client->call - gles2_calls) < 35) {
                     EGLint error;
