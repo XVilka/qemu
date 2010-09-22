@@ -71,6 +71,12 @@ static int host_display_height;
 static int shutting_down_guest = 0;
 static Notifier mouse_mode_notifier;
 
+#ifdef _WIN32
+#define MULTITOUCH_MODIFIER 56 /* left alt */
+#else
+#define MULTITOUCH_MODIFIER 219 /* left meta */
+#endif
+
 static void sdl_update(DisplayState *ds, int x, int y, int w, int h)
 {
     SDL_Rect rec;
@@ -90,7 +96,7 @@ static void sdl_update(DisplayState *ds, int x, int y, int w, int h)
         }
     } 
     if (multitouch_enabled && !cursor_hide && !gui_grab &&
-        modifiers_state[56] && real_screen && real_screen->pixels) {
+        modifiers_state[MULTITOUCH_MODIFIER] && real_screen && real_screen->pixels) {
         unsigned char *p = (unsigned char *)real_screen->pixels;
         int altX = real_screen->w - mouseX;
         int altY = real_screen->h - mouseY;
@@ -445,7 +451,9 @@ static void sdl_process_key(SDL_KeyboardEvent *ev)
     case 0x1d:                          /* Left CTRL */
     case 0x9d:                          /* Right CTRL */
     case 0x38:                          /* Left ALT */
-    case 0xb8:                         /* Right ALT */
+    case 0xb8:                          /* Right ALT */
+    case 0xdb:                          /* Left Meta */
+    case 0xdc:                          /* Right Meta */
         if (ev->type == SDL_KEYUP)
             modifiers_state[keycode] = 0;
         else
@@ -587,7 +595,7 @@ static void sdl_send_mouse_event(int dx, int dy, int dz, int x, int y, int state
         buttons |= MOUSE_EVENT_RBUTTON;
     if (state & SDL_BUTTON(SDL_BUTTON_MIDDLE))
         buttons |= MOUSE_EVENT_MBUTTON;
-    if (modifiers_state[56] &&
+    if (multitouch_enabled && modifiers_state[MULTITOUCH_MODIFIER] &&
         (buttons & (MOUSE_EVENT_LBUTTON | MOUSE_EVENT_RBUTTON)))
         buttons |= MOUSE_EVENT_MBUTTON << 1;
 

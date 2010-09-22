@@ -122,8 +122,8 @@ int keymap[] =
     14, //  51      0x33    0x0e            BKSP    QZ_BACKSPACE
     0,  //  52      0x34    Undefined
     1,  //  53      0x35    0x01            ESC     QZ_ESCAPE
-    220,//  54      0xdc            e0,5c   R GUI   QZ_RMETA
-    219,//  55      0xdb            e0,5b   L GUI   QZ_LMETA
+    220,//  54      0x36    0xdc    e0,5c   R GUI   QZ_RMETA
+    219,//  55      0x37    0xdb    e0,5b   L GUI   QZ_LMETA
     42, //  56      0x38    0x2a            L SHFT  QZ_LSHIFT
     58, //  57      0x39    0x3a            CAPS    QZ_CAPSLOCK
     56, //  58      0x3A    0x38            L ALT   QZ_LALT
