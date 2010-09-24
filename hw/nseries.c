@@ -2378,7 +2378,6 @@ static void n900_reset(void *opaque)
                  s->camera_cover_open);
     qemu_set_irq(qdev_get_gpio_in(s->cpu->gpio, N900_SLIDE_GPIO),
                  !s->slide_open);
-    omap3_boot_rom_emu(s->cpu);
     /* FIXME: hack - prevent reboot if shutdown was requested */
     if (s->shutdown_timer) {
         qemu_system_shutdown_request();
@@ -2482,7 +2481,7 @@ static void n900_init(ram_addr_t ram_size,
 #if MAX_SERIAL_PORTS < 3
 #error MAX_SERIAL_PORTS must be at least 3!
 #endif
-    s->cpu = omap3_mpu_init(omap3430, N900_SDRAM_SIZE,
+    s->cpu = omap3_mpu_init(omap3430, 1, N900_SDRAM_SIZE,
                             serial_hds[1], serial_hds[2],
                             serial_hds[0], NULL);
     omap_lcd_panel_attach(s->cpu->dss);
