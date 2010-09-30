@@ -18,11 +18,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "console.h"
+#include "config-host.h"
 
 #ifndef CONFIG_COCOA
 #include <png.h>
 #endif
+
+#include "console.h"
 
 #include "skin_image.h"
 
