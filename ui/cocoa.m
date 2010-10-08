@@ -41,7 +41,7 @@
 //#define DEBUG
 
 #ifdef DEBUG
-#define COCOA_DEBUG(...)  { (void) fprintf (stdout, __VA_ARGS__); }
+#define COCOA_DEBUG(fmt, ...) { (void) fprintf (stdout, "%s: " fmt "\n", __FUNCTION__, ##__VA_ARGS__); }
 #else
 #define COCOA_DEBUG(...)  ((void) 0)
 #endif
@@ -56,16 +56,16 @@ typedef struct {
 } QEMUScreen;
 
 int qemu_main(int argc, char **argv); // main defined in qemu/vl.c
-NSWindow *normalWindow;
-id cocoaView;
+static NSWindow *normalWindow;
+static id cocoaView;
 static DisplayChangeListener *dcl;
 static int last_vm_running;
 
-int gArgc;
-char **gArgv;
+static int gArgc;
+static char **gArgv;
 
 // keymap conversion
-int keymap[] =
+static const int keymap[] =
 {
 //  SdlI    macI    macH    SdlH    104xtH  104xtC  sdl
     30, //  0       0x00    0x1e            A       QZ_a
@@ -299,7 +299,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 @implementation QemuCocoaView
 - (id)initWithFrame:(NSRect)frameRect
 {
-    COCOA_DEBUG("QemuCocoaView: initWithFrame\n");
+    COCOA_DEBUG("");
 
     self = [super initWithFrame:frameRect];
     if (self) {
@@ -315,7 +315,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void) dealloc
 {
-    COCOA_DEBUG("QemuCocoaView: dealloc\n");
+    COCOA_DEBUG("");
 
     if (dataProviderRef)
         CGDataProviderRelease(dataProviderRef);
@@ -358,7 +358,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void) drawRect:(NSRect) rect
 {
-    COCOA_DEBUG("QemuCocoaView: drawRect\n");
+    COCOA_DEBUG("");
 
     // get CoreGraphic context
     CGContextRef viewContextRef = [[NSGraphicsContext currentContext] graphicsPort];
@@ -443,7 +443,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void) setContentDimensions
 {
-    COCOA_DEBUG("QemuCocoaView: setContentDimensions\n");
+    COCOA_DEBUG("");
 
     if (isFullscreen) {
         cdx = [[NSScreen mainScreen] frame].size.width / (float)screen.width;
@@ -478,7 +478,7 @@ static int cocoa_keycode_to_qemu(int keycode)
     // update windows
     if (isFullscreen) {
         [[fullScreenWindow contentView] setFrame:[[NSScreen mainScreen] frame]];
-        COCOA_DEBUG("resizing window: %4.0f,%4.0f %dx%4.0f\n", [normalWindow frame].origin.x, [normalWindow frame].origin.y - h + screen.height, w, h + [normalWindow frame].size.height - screen.height);
+        COCOA_DEBUG("resizing window: %4.0f,%4.0f %dx%4.0f", [normalWindow frame].origin.x, [normalWindow frame].origin.y - h + screen.height, w, h + [normalWindow frame].size.height - screen.height);
         [normalWindow setFrame:NSMakeRect([normalWindow frame].origin.x, [normalWindow frame].origin.y - h + screen.height, w, h + [normalWindow frame].size.height - screen.height) display:NO animate:NO];
 #ifdef CONFIG_SKINNING
     } else if (isZoomEnabled && is_graphic_console()) {
@@ -505,7 +505,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void) resizeContentToWidth:(id)arg
 {
-    COCOA_DEBUG("QemuCocoaView: resizeContentToWidth\n");
+    COCOA_DEBUG("");
     DisplayState *ds = get_displaystate();
     int w = ds_get_width(ds);
     int h = ds_get_height(ds);
@@ -527,7 +527,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void) toggleFullScreen:(id)sender
 {
-    COCOA_DEBUG("QemuCocoaView: toggleFullScreen\n");
+    COCOA_DEBUG("");
 
     if (isFullscreen) { // switch from fullscreen to desktop
         isFullscreen = FALSE;
@@ -592,7 +592,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 #ifdef CONFIG_SKINNING
 - (void) enableZooming:(int)w height:(int)h displayState:(DisplayState *)ds
 {
-    COCOA_DEBUG("enableZooming, %d x %d\n", w, h);
+    COCOA_DEBUG("%d x %d", w, h);
     isZoomEnabled = TRUE;
     zoomwidth = w;
     zoomheight = h;
@@ -843,7 +843,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void) grabMouse
 {
-    COCOA_DEBUG("QemuCocoaView: grabMouse\n");
+    COCOA_DEBUG("");
     if (cursor_hide) [NSCursor hide];
     CGAssociateMouseAndMouseCursorPosition(FALSE);
     isMouseGrabed = TRUE; // while isMouseGrabed = TRUE, QemuCocoaApp sends all events to [cocoaView handleEvent:]
@@ -852,7 +852,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void) ungrabMouse
 {
-    COCOA_DEBUG("QemuCocoaView: ungrabMouse\n");
+    COCOA_DEBUG("");
 
     if (cursor_hide) [NSCursor unhide];
     CGAssociateMouseAndMouseCursorPosition(TRUE);
@@ -925,7 +925,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 @implementation QemuCocoaAppController
 - (id) init
 {
-    COCOA_DEBUG("QemuCocoaAppController: init\n");
+    COCOA_DEBUG("");
 
     self = [super init];
     if (self) {
@@ -959,7 +959,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void) dealloc
 {
-    COCOA_DEBUG("QemuCocoaAppController: dealloc\n");
+    COCOA_DEBUG("");
 
     if (cocoaView)
         [cocoaView release];
@@ -968,7 +968,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void)applicationDidFinishLaunching: (NSNotification *) note
 {
-    COCOA_DEBUG("QemuCocoaAppController: applicationDidFinishLaunching\n");
+    COCOA_DEBUG("");
 
     // Display an open dialog box if no argument were passed or
     // if qemu was launched from the finder ( the Finder passes "-psn" )
@@ -987,7 +987,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
-    COCOA_DEBUG("QemuCocoaAppController: applicationWillTerminate\n");
+    COCOA_DEBUG("");
 
     qemu_system_shutdown_request();
 }
@@ -1015,7 +1015,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void)startEmulationWithArgc:(int)argc argv:(char**)argv
 {
-    COCOA_DEBUG("QemuCocoaAppController: startEmulationWithArgc\n");
+    COCOA_DEBUG("");
     gArgc = argc;
     gArgv = argv;
     [NSThread detachNewThreadSelector:@selector(runQemuThread:) toTarget:self withObject:nil];
@@ -1034,7 +1034,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void)openPanelDidEnd:(NSOpenPanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo
 {
-    COCOA_DEBUG("QemuCocoaAppController: openPanelDidEnd\n");
+    COCOA_DEBUG("");
 
     if (returnCode == NSCancelButton) {
         exit(0);
@@ -1048,7 +1048,7 @@ static int cocoa_keycode_to_qemu(int keycode)
         asprintf(&argv[1], "-hda");
         asprintf(&argv[2], "%s", img);
 
-        printf("Using argc %d argv %s -hda %s\n", 3, bin, img);
+        COCOA_DEBUG("Using argc %d argv %s -hda %s", 3, bin, img);
 
         [self startEmulationWithArgc:3 argv:(char**)argv];
     }
@@ -1056,7 +1056,7 @@ static int cocoa_keycode_to_qemu(int keycode)
 
 - (void)toggleFullScreen:(id)sender
 {
-    COCOA_DEBUG("QemuCocoaAppController: toggleFullScreen\n");
+    COCOA_DEBUG("");
 
     [cocoaView toggleFullScreen:sender];
 }
@@ -1102,7 +1102,8 @@ static int cocoa_keycode_to_qemu(int keycode)
 - (void)aboutQEMU:(id)sender
 {
     [NSApp orderFrontStandardAboutPanelWithOptions:[NSDictionary dictionaryWithObjectsAndKeys:
-                                                    @ QEMU_VERSION QEMU_PKGVERSION, @"ApplicationVersion",
+                                                    @ QEMU_VERSION, @"ApplicationVersion",
+                                                    @ QEMU_PKGVERSION, @"Version",
                                                     nil]];
 }
 @end
@@ -1207,7 +1208,7 @@ int main (int argc, const char * argv[])
 #pragma mark qemu
 static void cocoa_update(DisplayState *ds, int x, int y, int w, int h)
 {
-    COCOA_DEBUG("qemu_cocoa: cocoa_update\n");
+    COCOA_DEBUG("");
 
     NSRect rect;
     if ([cocoaView cdx] == 1.0) {
@@ -1232,7 +1233,7 @@ static void cocoa_update(DisplayState *ds, int x, int y, int w, int h)
 
 static void cocoa_resize(DisplayState *ds)
 {
-    COCOA_DEBUG("qemu_cocoa: cocoa_resize\n");
+    COCOA_DEBUG("");
 
     [cocoaView performSelectorOnMainThread:@selector(resizeContentToWidth:)
                                 withObject:nil waitUntilDone:YES];
@@ -1240,7 +1241,7 @@ static void cocoa_resize(DisplayState *ds)
 
 static void cocoa_refresh(DisplayState *ds)
 {
-    COCOA_DEBUG("qemu_cocoa: cocoa_refresh\n");
+    COCOA_DEBUG("");
 
     if (last_vm_running != vm_running) {
         last_vm_running = vm_running;
@@ -1270,7 +1271,7 @@ static void cocoa_enablezoom(DisplayState *ds, int width, int height)
 static void cocoa_getresolution(int *width, int *height)
 {
     NSRect screenrect = [[NSScreen mainScreen] frame];
-    COCOA_DEBUG("Screen dim: %f x %f\n", screenrect.size.width, screenrect.size.height);
+    COCOA_DEBUG("Screen dim: %f x %f", screenrect.size.width, screenrect.size.height);
     *width = (int)screenrect.size.width;
     *height = (int)screenrect.size.height;
 }
@@ -1279,13 +1280,13 @@ static void cocoa_getresolution(int *width, int *height)
 
 static void cocoa_cleanup(void)
 {
-    COCOA_DEBUG("qemu_cocoa: cocoa_cleanup\n");
+    COCOA_DEBUG("");
 	qemu_free(dcl);
 }
 
 void cocoa_display_init(DisplayState *ds, int full_screen)
 {
-    COCOA_DEBUG("qemu_cocoa: cocoa_display_init\n");
+    COCOA_DEBUG("");
 
 	dcl = qemu_mallocz(sizeof(DisplayChangeListener));
 	
