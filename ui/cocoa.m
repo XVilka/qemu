@@ -23,6 +23,7 @@
  */
 
 #import <Cocoa/Cocoa.h>
+#include <pthread.h>
 
 #include "qemu-common.h"
 #include "console.h"
@@ -1018,7 +1019,14 @@ static int cocoa_keycode_to_qemu(int keycode)
     COCOA_DEBUG("");
     gArgc = argc;
     gArgv = argv;
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGALRM);
+    sigaddset(&set, SIGUSR1);
+    sigaddset(&set, SIGUSR2);
+    sigaddset(&set, SIGIO);
     [NSThread detachNewThreadSelector:@selector(runQemuThread:) toTarget:self withObject:nil];
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
 }
 
 - (void)runQemuThread:(id)arg
@@ -1027,6 +1035,14 @@ static int cocoa_keycode_to_qemu(int keycode)
 #if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
     [[NSThread currentThread] setName:@"QEMU_MainThread"];
 #endif
+#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
+    pthread_setname_np("QEMU_MainThread");
+#endif
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGWINCH);
+    sigaddset(&set, SIGINFO);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
     int status = qemu_main(gArgc, gArgv);
     [pool release];
     exit(status);
