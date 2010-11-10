@@ -2412,6 +2412,11 @@ static int n900_display_close_callback(void *opaque)
     return 0;
 }
 
+static uint16_t n900_twl4030_madc_callback(twl4030_adc_type type, int ch)
+{
+    return 0x3ff;
+}
+
 static const TWL4030KeyMap n900_twl4030_keymap[] = {
     {0x10, 0, 0}, /* Q */
     {0x11, 0, 1}, /* W */
@@ -2527,6 +2532,7 @@ static void n900_init(ram_addr_t ram_size,
     s->twl4030 = twl4030_init(omap_i2c_bus(s->cpu->i2c, 0),
                               s->cpu->irq[0][OMAP_INT_3XXX_SYS_NIRQ],
                               NULL, n900_twl4030_keymap);
+    twl4030_madc_attach(s->twl4030, n900_twl4030_madc_callback);
     i2c_bus *i2c2 = omap_i2c_bus(s->cpu->i2c, 1);
     s->bq2415x = i2c_create_slave(i2c2, "bq2415x", 0x6b);
     s->tpa6130 = i2c_create_slave(i2c2, "tpa6130", 0x60);
