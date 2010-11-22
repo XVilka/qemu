@@ -29,6 +29,7 @@
 #include "devices.h"
 #include "flash.h"
 #include "sysbus.h"
+#include "blockdev.h"
 
 #define BEAGLE_NAND_CS       0
 #define BEAGLE_SMC_CS        1

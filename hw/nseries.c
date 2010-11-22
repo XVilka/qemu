@@ -34,6 +34,7 @@
 #include "net.h"
 #include "loader.h"
 #include "sysbus.h"
+#include "blockdev.h"
 
 //#define MIPID_DEBUG
 
