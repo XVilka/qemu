@@ -655,9 +655,9 @@ static void gles2_init_cb(gles2_State *s, gles2_decode_t *d, gles2_Client *c)
     GLES2_PRINT("Initialization!\n");
 
     if (!abi || abi >= gles2_abi_last) {
-        fprintf(stderr, "ERROR: unknown ABI %d!\n", abi);
-        gles2_ret_dword(s, 0);
-        return;
+        GLES2_PRINT("ERROR: unknown ABI %d!\n", abi);
+        /* support legacy clients that do not provide ABI id */
+        abi = gles2_abi_arm_softfp;
     }
     if (s->abi == gles2_abi_unknown) {
         s->abi = abi;
