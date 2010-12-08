@@ -110,7 +110,7 @@ static void gles2_glApplyVertexAttrib(gles2_Array *va)
 
  unsigned gles2_glGetCount(TGLenum pname)
 {
-    unsigned count;
+    GLint count;
     switch(pname) {
         case GL_ACTIVE_TEXTURE: count = 1; break;
         case GL_ALIASED_LINE_WIDTH_RANGE: count = 2; break;
@@ -128,7 +128,7 @@ static void gles2_glApplyVertexAttrib(gles2_Array *va)
         case GL_BLUE_BITS: count = 1; break;
         case GL_COLOR_CLEAR_VALUE: count = 4; break;
         case GL_COLOR_WRITEMASK: count = 4; break;
-        case GL_COMPRESSED_TEXTURE_FORMATS: count = GL_NUM_COMPRESSED_TEXTURE_FORMATS; break;
+        case GL_COMPRESSED_TEXTURE_FORMATS: hgl.glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &count); break;
         case GL_CULL_FACE: count = 1; break;
         case GL_CULL_FACE_MODE: count = 1; break;
         case GL_CURRENT_PROGRAM: count = 1; break;
@@ -172,7 +172,7 @@ static void gles2_glApplyVertexAttrib(gles2_Array *va)
         case GL_SAMPLES: count = 1; break;
         case GL_SCISSOR_BOX: count = 4; break;
         case GL_SCISSOR_TEST: count = 1; break;
-        case GL_SHADER_BINARY_FORMATS: count = GL_NUM_SHADER_BINARY_FORMATS; break;
+        case GL_SHADER_BINARY_FORMATS: hgl.glGetIntegerv(GL_NUM_SHADER_BINARY_FORMATS, &count); break;
         case GL_SHADER_COMPILER: count = 1; break;
         case GL_STENCIL_BACK_FAIL: count = 1; break;
         case GL_STENCIL_BACK_FUNC: count = 1; break;
@@ -204,7 +204,7 @@ static void gles2_glApplyVertexAttrib(gles2_Array *va)
 
     GLES2_PRINT("glGet(0x%x) -> %u!\n", pname, count);
 
-    return count;
+    return (unsigned)count;
 }
 
 unsigned gles2_glTexParameterCount(TGLenum pname)
