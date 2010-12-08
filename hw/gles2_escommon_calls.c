@@ -667,7 +667,7 @@ GLES2_CB(glTexParameteri)
         }
     }
 
-    hgl.glTexParameterf(target, pname, param);
+    hgl.glTexParameteri(target, pname, param);
 }
 
 GLES2_CB(glTexParameteriv)
