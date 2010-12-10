@@ -342,7 +342,7 @@ GLES2_CB(eglBindTexImage)
 
     GLES2_PRINT("Binding surface ID = %d!\n", fsurf->id);
 
-    EGLBoolean ret = eglBindTexImage(dpy, &fsurf->ddraw, buffer);
+    EGLBoolean ret = eglBindTexImage(dpy, fsurf->surf, buffer);
     if (pixelsp) {
         gles2_transfer_free(&tfr);
     }
@@ -363,7 +363,7 @@ GLES2_CB(eglReleaseTexImage)
 
     GLES2_PRINT("Unbinding surface ID = %d!\n", fsurf->id);
 
-    EGLBoolean ret = eglReleaseTexImage(dpy, &fsurf->ddraw, buffer);
+    EGLBoolean ret = eglReleaseTexImage(dpy, fsurf->surf, buffer);
     GLES2_BARRIER_RET;
     gles2_ret_TEGLBoolean(s, ret);
 }
