@@ -60,8 +60,17 @@ static void gles1_apply_glColorPointer(gles2_Array *va);
 void gles1_loadHGL(void);
 void gles1_loadHGL(void)
 {
+    const char *libname =
+#ifdef __APPLE__
+    "libGLES_CM.dylib";
+#elif defined(_WIN32)
+    "GLES_CM.dll";
+#else
+    "libGLES_CM.so";
+#endif
+
     void* handle;
-    if (!(handle = dlopen("libGLES_CM.so", RTLD_LOCAL | RTLD_LAZY))) {
+    if (!(handle = dlopen(libname, RTLD_LOCAL | RTLD_LAZY))) {
         fprintf(stderr, "ERROR: Couldn't load GLES_CM library!\n");
         exit(0);
     }

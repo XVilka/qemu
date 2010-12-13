@@ -45,8 +45,17 @@ static HGL hgl;
 void gles2_loadHGL(void);
 void gles2_loadHGL(void)
 {
+    const char *libname =
+#ifdef __APPLE__
+    "libGLESv2.dylib";
+#elif defined(_WIN32)
+    "GLESv2.dll";
+#else
+    "libGLESv2.so";
+#endif
+
     void* handle;
-    if (!(handle = dlopen("libGLESv2.so", RTLD_LOCAL | RTLD_LAZY))) {
+    if (!(handle = dlopen(libname, RTLD_LOCAL | RTLD_LAZY))) {
         fprintf(stderr, "ERROR: Couldn't load GLESv2 library!\n");
         exit(0);
     }
