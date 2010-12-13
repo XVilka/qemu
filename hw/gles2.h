@@ -381,22 +381,34 @@ static inline float gles2_arg_float(gles2_State *s, gles2_decode_t *d);
 static inline float gles2_arg_float(gles2_State *s, gles2_decode_t *d)
 {
     unsigned i = *d, j;
+    float value;
     j = i >> 8;
     i = i & 0xff;
     *d += 1 << 8;
 
     if (s->abi == gles2_abi_arm_hardfp) {
         if (j < 16) {
-            return ((float*)(((CPUARMState *)s->env)->vfp.regs))[j];
+            value = ((float*)(((CPUARMState *)s->env)->vfp.regs))[j];
+        } else {
+            j += ((i < 4) ? 0 : (i - 4)) - 16;
+            value = gles2_get_float(s, s->env->regs[13] + 2*0x04 + j*0x04);
         }
-        j += ((i < 4) ? 0 : (i - 4)) - 16;
     } else if (s->abi == gles2_abi_arm_softfp) {
         if (i + j < 4) {
-            return *((float*)&s->env->regs[i + j]);
+            value = *((float*)&s->env->regs[i + j]);
+        } else {
+            j = i + j - 4;
+            value = gles2_get_float(s, s->env->regs[13] + 2*0x04 + j*0x04);
         }
-        j = i + j - 4;
+    } else {
+        GLES2_PRINT("no abi defined, cannot get float!");
+        value=0;
     }
-    return gles2_get_float(s, s->env->regs[13] + 2*0x04 + j*0x04);
+#if (GLES2_DEBUG_ARGS == 1)
+    GLES2_PRINT("float arg(%d) = %5.2f\n", j, value);
+#endif
+    return value;
+
 }
 
 /******************************************************************************
