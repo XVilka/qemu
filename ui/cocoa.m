@@ -40,6 +40,7 @@
 #endif
 
 //#define DEBUG
+//#define QEMU_COCOA_THREADED
 
 #ifdef DEBUG
 #define COCOA_DEBUG(fmt, ...) { (void) fprintf (stdout, "%s: " fmt "\n", __FUNCTION__, ##__VA_ARGS__); }
@@ -279,9 +280,6 @@ static int cocoa_keycode_to_qemu(int keycode)
 - (void) grabMouse;
 - (void) ungrabMouse;
 - (void) toggleFullScreen:(id)sender;
-#ifdef CONFIG_SKINNING
-- (void) enableZooming:(int)w height:(int)h displayState:(DisplayState *)ds;
-#endif
 - (void) qemuReportMouseEvent:(NSEvent *)event position:(NSPoint)p buttons:(int)buttons;
 - (void) setAbsoluteEnabled:(BOOL)tIsAbsoluteEnabled;
 - (void) setShuttingDownGuest;
@@ -294,6 +292,10 @@ static int cocoa_keycode_to_qemu(int keycode)
 - (void) checkAndDisplayAltCursor;
 #ifdef CONFIG_SKINNING
 - (BOOL) isFullscreen;
+- (void) enableZooming:(int)w height:(int)h displayState:(DisplayState *)ds;
+#endif
+#ifndef QEMU_COCOA_THREADED
+- (BOOL) handleEvent:(NSEvent *)event;
 #endif
 @end
 
@@ -599,9 +601,12 @@ static int cocoa_keycode_to_qemu(int keycode)
     zoomheight = h;
     realwidth = ds_get_width(ds);
     realheight = ds_get_height(ds);
-    
+#ifdef QEMU_COCOA_THREADED
     [self performSelectorOnMainThread:@selector(resizeContentToWidth:)
                            withObject:nil waitUntilDone:YES];
+#else
+    [self resizeContentToWidth:self];
+#endif
 }
 #endif
 
@@ -817,6 +822,60 @@ static int cocoa_keycode_to_qemu(int keycode)
     }
 }
 
+#ifndef QEMU_COCOA_THREADED
+- (BOOL) handleEvent:(NSEvent *)event
+{
+    switch ([event type]) {
+        case NSFlagsChanged:
+            [self flagsChanged:event];
+            break;
+        case NSKeyDown:
+            [self keyDown:event];
+            break;
+        case NSKeyUp:
+            [self keyUp:event];
+            break;
+        case NSMouseMoved:
+            [self mouseMoved:event];
+            break;
+        case NSLeftMouseDown:
+            [self mouseDown:event];
+            break;
+        case NSRightMouseDown:
+            [self rightMouseDown:event];
+            break;
+        case NSOtherMouseDown:
+            [self otherMouseDown:event];
+            break;
+        case NSLeftMouseDragged:
+            [self mouseDragged:event];
+            break;
+        case NSRightMouseDragged:
+            [self rightMouseDragged:event];
+            break;
+        case NSOtherMouseDragged:
+            [self otherMouseDragged:event];
+            break;
+        case NSLeftMouseUp:
+            [self mouseUp:event];
+            break;
+        case NSRightMouseUp:
+            [self rightMouseUp:event];
+            break;
+        case NSOtherMouseUp:
+            [self otherMouseUp:event];
+            break;
+        case NSScrollWheel:
+            [self scrollWheel:event];
+            break;
+        default:
+            break;
+    }
+    [NSApp sendEvent:event];
+    return NO;
+}
+#endif
+
 - (void) qemuReportMouseEvent:(NSEvent *)event position:(NSPoint)p buttons:(int)buttons
 {
     if (isTabletEnabled) {
@@ -918,9 +977,11 @@ static int cocoa_keycode_to_qemu(int keycode)
 {
 }
 - (void)startEmulationWithArgc:(int)argc argv:(char**)argv;
-- (void)runQemuThread:(id)arg;
 - (void)openPanelDidEnd:(NSOpenPanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo;
 - (void)toggleFullScreen:(id)sender;
+#ifdef QEMU_COCOA_THREADED
+- (void)runQemuThread:(id)arg;
+#endif
 @end
 
 @implementation QemuCocoaAppController
@@ -1019,6 +1080,7 @@ static int cocoa_keycode_to_qemu(int keycode)
     COCOA_DEBUG("");
     gArgc = argc;
     gArgv = argv;
+#ifdef QEMU_COCOA_THREADED
     sigset_t set;
     sigemptyset(&set);
     sigaddset(&set, SIGALRM);
@@ -1027,8 +1089,12 @@ static int cocoa_keycode_to_qemu(int keycode)
     sigaddset(&set, SIGIO);
     [NSThread detachNewThreadSelector:@selector(runQemuThread:) toTarget:self withObject:nil];
     pthread_sigmask(SIG_BLOCK, &set, NULL);
+#else
+    exit(qemu_main(gArgc, gArgv));
+#endif
 }
 
+#ifdef QEMU_COCOA_THREADED
 - (void)runQemuThread:(id)arg
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -1047,6 +1113,7 @@ static int cocoa_keycode_to_qemu(int keycode)
     [pool release];
     exit(status);
 }
+#endif
 
 - (void)openPanelDidEnd:(NSOpenPanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo
 {
@@ -1251,8 +1318,12 @@ static void cocoa_resize(DisplayState *ds)
 {
     COCOA_DEBUG("");
 
+#ifdef QEMU_COCOA_THREADED
     [cocoaView performSelectorOnMainThread:@selector(resizeContentToWidth:)
                                 withObject:nil waitUntilDone:YES];
+#else
+    [cocoaView resizeContentToWidth:cocoaView];
+#endif
 }
 
 static void cocoa_refresh(DisplayState *ds)
@@ -1272,6 +1343,19 @@ static void cocoa_refresh(DisplayState *ds)
         }
         [cocoaView setAbsoluteEnabled:YES];
     }
+
+#ifndef QEMU_COCOA_THREADED
+    NSDate *distantPast;
+    NSEvent *event;
+    distantPast = [NSDate distantPast];
+    do {
+        event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:distantPast
+                                      inMode: NSDefaultRunLoopMode dequeue:YES];
+        if (event != nil) {
+            [cocoaView handleEvent:event];
+        }
+    } while(event != nil);
+#endif
 
     if (is_graphic_console()) {
         vga_hw_update();
