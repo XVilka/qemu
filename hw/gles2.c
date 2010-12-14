@@ -18,6 +18,8 @@
 #endif
 #endif
 
+extern void gles1_loadHGL(void);
+extern void gles2_loadHGL(void);
 
 #ifdef _WIN32
 #include <windows.h>
@@ -514,9 +516,7 @@ void *gles2_init(CPUState *env)
 
     GLES2_PRINT("Registered IO memory!\n");
 
-    extern void gles1_loadHGL(void);
     gles1_loadHGL();
-    extern void gles2_loadHGL(void);
     gles2_loadHGL();
 
     return s;
