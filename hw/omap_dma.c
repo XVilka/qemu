@@ -29,7 +29,7 @@
 #ifdef OMAP_DMA_DEBUG
 #define TRACE(fmt,...) printf("%s:" fmt "\n", __FUNCTION__, ##__VA_ARGS__)
 #else
-#define TRACE(...)
+#define TRACE(...) {}
 #endif
 
 struct omap_dma_channel_s {
