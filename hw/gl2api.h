@@ -106,7 +106,7 @@
     GLES2_HGL_FUNC(void,glStencilMaskSeparate,(GLenum face, GLuint mask)) \
     GLES2_HGL_FUNC(void,glStencilOp,(GLenum fail, GLenum zfail, GLenum zpass)) \
     GLES2_HGL_FUNC(void,glStencilOpSeparate,(GLenum face, GLenum fail, GLenum zfail, GLenum zpass)) \
-    GLES2_HGL_FUNC(void,glTexImage2D,(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels)) \
+    GLES2_HGL_FUNC(void,glTexImage2D,(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels)) \
     GLES2_HGL_FUNC(void,glTexParameterf,(GLenum target, GLenum pname, GLfloat param)) \
     GLES2_HGL_FUNC(void,glTexParameterfv,(GLenum target, GLenum pname, const GLfloat* params)) \
     GLES2_HGL_FUNC(void,glTexParameteri,(GLenum target, GLenum pname, GLint param)) \
