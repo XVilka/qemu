@@ -16,6 +16,15 @@
 #include "cpu.h"
 #include <pthread.h>
 #include "EGL/degl.h"
+#ifdef _WIN32
+#   define RTLD_LAZY  0x01
+#   define RTLD_LOCAL 0x02
+    extern void* dlopen(char const* name, unsigned flags);
+    extern void* dlsym(void* handle, char const* proc);
+    extern int dlclose(void* handle);
+#else
+#   include <dlfcn.h>
+#endif
 
 
 

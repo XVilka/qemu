@@ -9,6 +9,7 @@
  * with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include "gles2.h"
 #include <pthread.h>
 //FIXME: Move this to a better place
@@ -32,9 +33,9 @@ void* dlsym(void* handle, char const* proc)
 {
     return GetProcAddress(handle,proc);
 }
-void dlclose(void* handle)
+int dlclose(void* handle)
 {
-    return FreeLibrary(handle);
+    return !FreeLibrary(handle);
 }
 #endif
 // From target-arm/helper.c.

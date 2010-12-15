@@ -14,16 +14,6 @@
 #include "GLES/gl.h"
 #include "glapi.h"
 
-#ifdef _WIN32
-#   define RTLD_LAZY  0x01
-#   define RTLD_LOCAL 0x02
-    extern void* dlopen(char const* name, unsigned flags);
-    extern void* dlsym(void* handle, char const* proc);
-#else
-#   include <dlfcn.h>
-#endif
-
-
 static int context_index = 0;
 
 static HGL hgl;

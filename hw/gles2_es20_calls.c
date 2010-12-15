@@ -13,14 +13,6 @@
 #include "GLES2/gl2.h"
 #include "gl2api.h"
 
-#ifdef _WIN32
-#   define RTLD_LAZY  0x01
-#   define RTLD_LOCAL 0x02
-    extern void* dlopen(char const* name, unsigned flags);
-    extern void* dlsym(void* handle, char const* proc);
-#else
-#   include <dlfcn.h>
-#endif
 
 
 /**
