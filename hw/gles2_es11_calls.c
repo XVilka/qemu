@@ -331,7 +331,7 @@ GLES2_CB(glGetPointerv)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-
+    GLES2_BARRIER_ARG_NORET;
     Tptr res = 0;
     gles2_Context * ctx = c->context[context_index];
     switch (pname)
@@ -355,7 +355,6 @@ GLES2_CB(glGetPointerv)
         break;
     }
 
-    GLES2_BARRIER_RET;
     gles2_put_Tptr(s, paramsp, res);
 }
 

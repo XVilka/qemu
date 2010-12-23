@@ -54,6 +54,7 @@ void gles2_es20_write(void *opaque, target_phys_addr_t addr, uint32_t value)
         //should be ignored.
         if ((page - 2 > GLES2_NCLIENTS) ||
             !(client = s->clients[page - 2])) {
+            GLES2_PRINT("ignoring invalid page(%d) write...\n",page);
             return;
         }
 

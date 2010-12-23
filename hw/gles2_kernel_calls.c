@@ -93,8 +93,8 @@ GLES2_CB(init)
     GLES2_PRINT("Exit called for client %d!\n", nr);
 
     if ((nr > GLES2_NCLIENTS + 1) ||
-    (nr == 0)) {
-        GLES2_PRINT("Client number out of range!\n");
+    (nr < 1)) {
+        GLES2_PRINT("Client number (%d) out of range!\n",nr);
     return;
     }  else {
         client = s->clients[nr - 1];
