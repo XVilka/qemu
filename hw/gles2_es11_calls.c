@@ -140,12 +140,11 @@ static void gles1_apply_glVertexPointer(gles2_Array *va)
 }
 
 
-unsigned gles1_glGetCount(TGLenum pname)
+unsigned __attribute__((const)) gles1_glGetCount(TGLenum pname)
 {
     unsigned count;
     switch(pname) {
-        case GL_MAX_TEXTURE_UNITS:
-
+        case GL_ACTIVE_TEXTURE:
         case GL_ALPHA_BITS:
         case GL_ALPHA_SCALE:
         case GL_ALPHA_TEST:
@@ -155,6 +154,7 @@ unsigned gles1_glGetCount(TGLenum pname)
         case GL_BLEND_DST:
         case GL_BLEND_SRC:
         case GL_BLUE_BITS:
+        case GL_CLIENT_ACTIVE_TEXTURE:
         case GL_CLIP_PLANE0:
         case GL_CLIP_PLANE1:
         case GL_CLIP_PLANE2:
@@ -200,7 +200,9 @@ unsigned gles1_glGetCount(TGLenum pname)
         case GL_MAX_PROJECTION_STACK_DEPTH:
         case GL_MAX_TEXTURE_SIZE:
         case GL_MAX_TEXTURE_STACK_DEPTH:
+        case GL_MAX_TEXTURE_UNITS:
         case GL_MODELVIEW_STACK_DEPTH:
+        case GL_MULTISAMPLE:
         case GL_NORMALIZE:
         case GL_PACK_ALIGNMENT:
         case GL_PERSPECTIVE_CORRECTION_HINT:
@@ -272,6 +274,21 @@ unsigned gles1_glGetCount(TGLenum pname)
         case GL_POINT_SIZE_MIN:
         case GL_POINT_SIZE_MAX:
         case GL_POINT_FADE_THRESHOLD_SIZE:
+        case GL_SAMPLE_ALPHA_TO_COVERAGE:
+        case GL_SAMPLE_ALPHA_TO_ONE:
+        case GL_SAMPLE_COVERAGE:
+        case GL_SAMPLE_COVERAGE_VALUE:
+        case GL_SAMPLE_COVERAGE_INVERT:
+        case GL_SAMPLE_BUFFERS:
+        case GL_SAMPLES:
+        case GL_POINT_SPRITE_OES:
+        case GL_ARRAY_BUFFER_BINDING:
+        case GL_VERTEX_ARRAY_BUFFER_BINDING:
+        case GL_NORMAL_ARRAY_BUFFER_BINDING:
+        case GL_COLOR_ARRAY_BUFFER_BINDING:
+        case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING:
+        case GL_ELEMENT_ARRAY_BUFFER_BINDING:
+
           count = 1;
           break;
 
@@ -279,6 +296,8 @@ unsigned gles1_glGetCount(TGLenum pname)
         case GL_ALIASED_LINE_WIDTH_RANGE:
         case GL_MAX_VIEWPORT_DIMS:
         case GL_ALIASED_POINT_SIZE_RANGE:
+        case GL_SMOOTH_LINE_WIDTH_RANGE:
+        case GL_SMOOTH_POINT_SIZE_RANGE:
           count = 2;
           break;
 
@@ -314,13 +333,13 @@ unsigned gles1_glGetCount(TGLenum pname)
           break;
 
         default:
-            GLES2_PRINT("ERROR: Unknown pname 0x%x in glGet!\n", pname);
+            //GLES2_PRINT("ERROR: Unknown pname 0x%x in glGet!\n", pname);
             //exit(0);
             count = 1;
             break;
     }
 
-    GLES2_PRINT("glGet(0x%x) -> %u!\n", pname, count);
+    //GLES2_PRINT("glGet(0x%x) -> %u!\n", pname, count);
 
     return count;
 }
@@ -496,11 +515,11 @@ GLES2_CB(glGetClipPlanef)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, eqnp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfloat eqn [16];
 
     hgl.glGetClipPlanef(pname, eqn);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfloat(s, eqnp + i*sizeof(TGLfloat), eqn[i]);
@@ -512,11 +531,11 @@ GLES2_CB(glGetLightfv)
     GLES2_ARG(TGLenum, light);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfloat params [16];
 
     hgl.glGetLightfv(light, pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfloat(s, paramsp + i*sizeof(TGLfloat), params[i]);
@@ -528,11 +547,11 @@ GLES2_CB(glGetMaterialfv)
     GLES2_ARG(TGLenum, face);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfloat params [16];
 
     hgl.glGetMaterialfv(face, pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfloat(s, paramsp + i*sizeof(TGLfloat), params[i]);
@@ -544,11 +563,11 @@ GLES2_CB(glGetTexEnvfv)
     GLES2_ARG(TGLenum, env);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfloat params [16];
 
     hgl.glGetTexEnvfv(env, pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfloat(s, paramsp + i*sizeof(TGLfloat), params[i]);
@@ -568,13 +587,13 @@ GLES2_CB(glLightModelfv)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfloat params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         params[i] = gles2_get_TGLfloat(s, paramsp + i*sizeof(TGLfloat));
     }
-    GLES2_BARRIER_ARG_NORET;
 
     hgl.glLightModelfv(pname, params);
 }
@@ -927,11 +946,11 @@ GLES2_CB(glGetClipPlanex)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, eqnp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfixed eqn [16];
 
     hgl.glGetClipPlanex(pname, eqn);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfixed(s, eqnp + i*sizeof(TGLfixed), eqn[i]);
@@ -942,11 +961,11 @@ GLES2_CB(glGetFixedv)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfixed params [16];
 
     hgl.glGetFixedv(pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfixed(s, paramsp + i*sizeof(TGLfixed), params[i]);
@@ -958,11 +977,11 @@ GLES2_CB(glGetLightxv)
     GLES2_ARG(TGLenum, light);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfixed params [16];
 
     hgl.glGetLightxv(light, pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfixed(s, paramsp + i*sizeof(TGLfixed), params[i]);
@@ -974,11 +993,11 @@ GLES2_CB(glGetMaterialxv)
     GLES2_ARG(TGLenum, face);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfixed params [16];
 
     hgl.glGetMaterialxv(face, pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfixed(s, paramsp + i*sizeof(TGLfixed), params[i]);
@@ -990,11 +1009,11 @@ GLES2_CB(glGetTexEnviv)
     GLES2_ARG(TGLenum, env);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLint params [16];
 
     hgl.glGetTexEnviv(env, pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLint(s, paramsp + i*sizeof(TGLint), params[i]);
@@ -1006,11 +1025,11 @@ GLES2_CB(glGetTexEnvxv)
     GLES2_ARG(TGLenum, env);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfixed params [16];
 
     hgl.glGetTexEnvxv(env, pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfixed(s, paramsp + i*sizeof(TGLfixed), params[i]);
@@ -1022,11 +1041,11 @@ GLES2_CB(glGetTexParameterxv)
     GLES2_ARG(TGLenum, target);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG_NORET;
     unsigned count = gles1_glGetCount(pname);
     GLfixed params [16];
 
     hgl.glGetTexParameterxv(target, pname, params);
-    GLES2_BARRIER_RET;
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
         gles2_put_TGLfixed(s, paramsp + i*sizeof(TGLfixed), params[i]);
