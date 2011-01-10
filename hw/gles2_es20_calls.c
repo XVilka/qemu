@@ -535,17 +535,15 @@ GL_APICALL void GL_APIENTRY hgl.glGetShaderSource(GLuint shader, GLsizei bufsize
 {
     DUMMY();
 }
+#endif // 0
 
-GL_APICALL GLboolean GL_APIENTRY hgl.glIsShader(GLuint shader)
+GLES2_CB(glReleaseShaderCompiler)
 {
-    DUMMY();
+    GLES2_BARRIER_ARG_NORET;
+    hgl.glReleaseShaderCompiler();
 }
 
-GL_APICALL void GL_APIENTRY hgl.glReleaseShaderCompiler(void)
-{
-    DUMMY();
-}
-
+#if 0
 GL_APICALL void GL_APIENTRY hgl.glShaderBinary(GLsizei n, const GLuint* shaders,
     GLenum binaryformat, const void* binary, GLsizei length)
 {
@@ -1411,19 +1409,25 @@ GLES2_CB(glGetRenderbufferParameteriv)//(GLenum target, GLenum pname,
 {
     DUMMY();
 }
+#endif // 0
 
 GLES2_CB(glIsFramebuffer)//(GLuint framebuffer)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, framebuffer);
+    GLES2_BARRIER_ARG;
+
+    GLES2_BARRIER_RET;
+    gles2_ret_TGLboolean(s, hgl.glIsFramebuffer(framebuffer));
 }
 
 GLES2_CB(glIsRenderbuffer)//(GLuint renderbuffer)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, renderbuffer);
+    GLES2_BARRIER_ARG;
+
+    GLES2_BARRIER_RET;
+    gles2_ret_TGLboolean(s, hgl.glIsRenderbuffer(renderbuffer));
 }
-#endif // 0
-
-
 
 GLES2_CB(glRenderbufferStorage)
 {

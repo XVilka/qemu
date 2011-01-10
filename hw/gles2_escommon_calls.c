@@ -172,7 +172,21 @@ GLES2_CB(glCullFace)
     hgl.glCullFace(mode);
 }
 
-//FIXME: couldnt find glDeleteBuffers implementation
+GLES2_CB(glDeleteBuffers)
+{
+    GLES2_ARG(TGLsizei, n);
+    GLES2_ARG(Tptr, buffersp);
+
+    GLuint *buffers = malloc(n * sizeof(GLuint));
+    GLsizei i;
+    for (i = 0; i < n; i++) {
+        buffers[i] = gles2_get_TGLuint(s, buffersp + i * sizeof(TGLuint));
+    }
+    GLES2_BARRIER_ARG_NORET;
+
+    hgl.glDeleteBuffers(n, buffers);
+    free(buffers);
+}
 
 GLES2_CB(glDeleteTextures)
 {
@@ -318,7 +332,22 @@ GLES2_CB(glFrontFace)
     hgl.glFrontFace(mode);
 }
 
-//FIXME: couldnt find glGenBuffers implementation
+GLES2_CB(glGenBuffers)
+{
+    GLES2_ARG(TGLsizei, n);
+    GLES2_ARG(Tptr, buffersp);
+    GLES2_BARRIER_ARG;
+
+    GLuint *buffers = malloc(n * sizeof(GLuint));
+    hgl.glGenBuffers(n, buffers);
+
+    GLES2_BARRIER_RET;
+    GLsizei i;
+    for (i = 0; i < n; i++, buffersp += sizeof(TGLuint)) {
+        gles2_put_TGLuint(s, buffersp, buffers[i]);
+    }
+    free(buffers);
+}
 
 GLES2_CB(glGenTextures)
 {
@@ -454,7 +483,14 @@ GLES2_CB(glHint)
     hgl.glHint(target, mode);
 }
 
-//FIXME: couldnt find glIsBuffer implementation
+GLES2_CB(glIsBuffer)
+{
+    GLES2_ARG(TGLuint, buffer);
+    GLES2_BARRIER_ARG;
+
+    GLES2_BARRIER_RET;
+    gles2_ret_TGLboolean(s, hgl.glIsBuffer(buffer));
+}
 
 GLES2_CB(glIsEnabled)
 {
