@@ -248,19 +248,35 @@ GLES2_CB(glEnableVertexAttribArray)
     hgl.glEnableVertexAttribArray(index);
 }
 
+GLES2_CB(glGetVertexAttribfv)
+{
+    GLES2_ARG(TGLuint, index);
+    GLES2_ARG(TGLenum, pname);
+    GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG;
+
+    GLfloat params = 0;
+    hgl.glGetVertexAttribfv(index, pname, &params);
+
+    GLES2_BARRIER_RET;
+    gles2_put_TGLfloat(s, paramsp, params);
+}
+
+GLES2_CB(glGetVertexAttribiv)
+{
+    GLES2_ARG(TGLuint, index);
+    GLES2_ARG(TGLenum, pname);
+    GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG;
+
+    GLint params = 0;
+    hgl.glGetVertexAttribiv(index, pname, &params);
+
+    GLES2_BARRIER_RET;
+    gles2_put_TGLint(s, paramsp, params);
+}
+
 #if 0
-GL_APICALL void GL_APIENTRY hgl.glGetVertexAttribfv(GLuint index, GLenum pname,
-    GLfloat* params)
-{
-    DUMMY();
-}
-
-GL_APICALL void GL_APIENTRY hgl.glGetVertexAttribiv(GLuint index, GLenum pname,
-    GLint* params)
-{
-    DUMMY();
-}
-
 GL_APICALL void GL_APIENTRY hgl.glGetVertexAttribPointerv(GLuint index,
     GLenum pname, void** pointer)
 {
@@ -1397,19 +1413,34 @@ GLES2_CB(glGenRenderbuffers)//(GLsizei n, GLuint* renderbuffers)
     free(renderbuffers);
 }
 
-#if 0
-GLES2_CB(glGetFramebufferAttachmentParameteriv)//(GLenum target,
-    GLenum attachment, GLenum pname, GLint* params)
+GLES2_CB(glGetFramebufferAttachmentParameteriv)
 {
-    DUMMY();
+    GLES2_ARG(TGLenum, target);
+    GLES2_ARG(TGLenum, attachment);
+    GLES2_ARG(TGLenum, pname);
+    GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG;
+
+    GLint params = 0;
+    hgl.glGetFramebufferAttachmentParameteriv(target, attachment, pname, &params);
+
+    GLES2_BARRIER_RET;
+    gles2_put_TGLint(s, paramsp, params);
 }
 
-GLES2_CB(glGetRenderbufferParameteriv)//(GLenum target, GLenum pname,
-    GLint* params)
+GLES2_CB(glGetRenderbufferParameteriv)
 {
-    DUMMY();
+    GLES2_ARG(TGLenum, target);
+    GLES2_ARG(TGLenum, pname);
+    GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG;
+
+    GLint params = 0;
+    hgl.glGetRenderbufferParameteriv(target, pname, &params);
+
+    GLES2_BARRIER_RET;
+    gles2_put_TGLint(s, paramsp, params);
 }
-#endif // 0
 
 GLES2_CB(glIsFramebuffer)//(GLuint framebuffer)
 {

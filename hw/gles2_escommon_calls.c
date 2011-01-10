@@ -381,7 +381,19 @@ GLES2_CB(glGetBooleanv)
     }
 }
 
-//FIXME: couldnt find glGetBufferParameteriv implementation
+GLES2_CB(glGetBufferParameteriv)
+{
+    GLES2_ARG(TGLenum, target);
+    GLES2_ARG(TGLenum, value);
+    GLES2_ARG(Tptr, datap);
+    GLES2_BARRIER_ARG;
+
+    GLint data = 0;
+    hgl.glGetBufferParameteriv(target, value, &data);
+
+    GLES2_BARRIER_RET;
+    gles2_put_TGLint(s, datap, data);
+}
 
 GLES2_CB(glGetError)
 {
