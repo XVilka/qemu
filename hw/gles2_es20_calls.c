@@ -636,18 +636,49 @@ GLES2_CB(glDeleteProgram)//(GLuint program)
     hgl.glDeleteProgram(program);
 }
 
-#if 0
-GL_APICALL void GL_APIENTRY hgl.glDetachShader(GLuint program, GLuint shader)
+GLES2_CB(glDetachShader)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, program);
+    GLES2_ARG(TGLuint, shader);
+    GLES2_BARRIER_ARG_NORET;
+
+    hgl.glDetachShader(program, shader);
 }
 
-GL_APICALL void GL_APIENTRY glGetActiveAttrib (GLuint program, GLuint index,
-    GLsizei bufsize, GLsizei* length, GLint* size, GLenum* type, char* name)
+GLES2_CB(glGetActiveAttrib)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, program);
+    GLES2_ARG(TGLuint, index);
+    GLES2_ARG(TGLsizei, bufsize);
+    GLES2_ARG(Tptr, lengthp);
+    GLES2_ARG(Tptr, sizep);
+    GLES2_ARG(Tptr, typep);
+    GLES2_ARG(Tptr, namep);
+    GLES2_BARRIER_ARG;
+
+    char *name = malloc(bufsize);
+    GLsizei length = 0;
+    GLint size = 0;
+    GLenum type = 0;
+
+    hgl.glGetActiveAttrib(program, index, bufsize, &length, &size, &type, name);
+
+    GLES2_BARRIER_RET;
+    if (lengthp) {
+        gles2_put_TGLsizei(s, lengthp, length);
+    }
+    gles2_put_TGLint(s, sizep, size);
+    gles2_put_TGLenum(s, typep, type);
+
+    Tptr i;
+    for (i = 0; i < length; i++) {
+        gles2_put_byte(s, namep + i, name[i]);
+    }
+    if (i < bufsize) {
+        gles2_put_byte(s, namep + i, 0);
+    }
+    free(name);
 }
-#endif // 0
 
 GLES2_CB(glGetActiveUniform)
 {
@@ -684,13 +715,31 @@ GLES2_CB(glGetActiveUniform)
     free(name);
 }
 
-#if 0
-GL_APICALL void GL_APIENTRY glGetAttachedShaders (GLuint program,
-    GLsizei maxcount, GLsizei* count, GLuint* shaders)
+GLES2_CB(glGetAttachedShaders)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, program);
+    GLES2_ARG(TGLsizei, maxcount);
+    GLES2_ARG(Tptr, countp);
+    GLES2_ARG(Tptr, shadersp);
+    GLES2_BARRIER_ARG;
+
+    GLsizei count = 0;
+    GLuint *shaders = malloc(maxcount * sizeof(GLuint));
+
+    hgl.glGetAttachedShaders(program, maxcount, &count, shaders);
+
+    GLES2_BARRIER_RET;
+    if (countp) {
+        gles2_put_TGLsizei(s, countp, count);
+    }
+
+    GLsizei i;
+    for (i = 0; i < count; i++, shadersp += sizeof(GLuint)) {
+        gles2_put_TGLuint(s, shadersp, shaders[i]);
+    }
+
+    free(shaders);
 }
-#endif // 0
 
 GLES2_CB(glGetAttribLocation)
 {
@@ -739,17 +788,83 @@ GLES2_CB(glGetProgramInfoLog)
     free(infolog);
 }
 
-#if 0
-GL_APICALL void GL_APIENTRY hgl.glGetUniformfv(GLuint program, GLint location, GLfloat* params)
+static uint32_t gles2_typesize(GLenum type)
 {
-    DUMMY();
+    switch (type) {
+        case GL_FLOAT: return sizeof(GLfloat);
+        case GL_FLOAT_VEC2: return sizeof(GLfloat) * 2;
+        case GL_FLOAT_VEC3: return sizeof(GLfloat) * 3;
+        case GL_FLOAT_VEC4: return sizeof(GLfloat) * 4;
+        case GL_INT: return sizeof(GLint);
+        case GL_INT_VEC2: return sizeof(GLint) * 2;
+        case GL_INT_VEC3: return sizeof(GLint) * 3;
+        case GL_INT_VEC4: return sizeof(GLint) * 4;
+        case GL_BOOL: return sizeof(GLboolean);
+        case GL_BOOL_VEC2: return sizeof(GLboolean) * 2;
+        case GL_BOOL_VEC3: return sizeof(GLboolean) * 3;
+        case GL_BOOL_VEC4: return sizeof(GLboolean) * 4;
+        case GL_FLOAT_MAT2: return sizeof(GLfloat) * 2 * 2;
+        case GL_FLOAT_MAT3: return sizeof(GLfloat) * 3 * 3;
+        case GL_FLOAT_MAT4: return sizeof(GLfloat) * 4 * 4;
+        //case GL_FLOAT_MAT2x3: return sizeof(GLfloat) * 2 * 3;
+        //case GL_FLOAT_MAT2x4: return sizeof(GLfloat) * 2 * 4;
+        //case GL_FLOAT_MAT3x2: return sizeof(GLfloat) * 3 * 2;
+        //case GL_FLOAT_MAT3x4: return sizeof(GLfloat) * 3 * 4;
+        //case GL_FLOAT_MAT4x2: return sizeof(GLfloat) * 4 * 2;
+        //case GL_FLOAT_MAT4x3: return sizeof(GLfloat) * 4 * 3;
+        //case GL_SAMPLER_1D: return sizeof(GLuint);
+        case GL_SAMPLER_2D: return sizeof(GLuint);
+        //case GL_SAMPLER_3D: return sizeof(GLuint);
+        case GL_SAMPLER_CUBE: return sizeof(GLuint);
+        //case GL_SAMPLER_1D_SHADOW: return sizeof(GLuint);
+        //case GL_SAMPLER_2D_SHADOW: return sizeof(GLuint);
+        default: break;
+    }
+    GLES2_PRINT("ERROR: unknown GL type 0x%x\n", type);
+    return 0;
 }
 
-GL_APICALL void GL_APIENTRY hgl.glGetUniformiv(GLuint program, GLint location, GLint* params)
+GLES2_CB(glGetUniformfv)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, program);
+    GLES2_ARG(TGLint, location);
+    GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG;
+
+    GLint size = 0;
+    GLenum type = 0;
+    hgl.glGetActiveUniform(program, location, 0, NULL, &size, &type, NULL);
+    GLfloat *params = malloc(size * gles2_typesize(type));
+    hgl.glGetUniformfv(program, location, params);
+
+    GLES2_BARRIER_RET;
+    GLint i;
+    for (i = 0; i < size; i++, paramsp += sizeof(TGLfloat)) {
+        gles2_put_TGLfloat(s, paramsp, params[i]);
+    }
+    free(params);
 }
-#endif // 0
+
+GLES2_CB(glGetUniformiv)
+{
+    GLES2_ARG(TGLuint, program);
+    GLES2_ARG(TGLint, location);
+    GLES2_ARG(Tptr, paramsp);
+    GLES2_BARRIER_ARG;
+
+    GLint size = 0;
+    GLenum type = 0;
+    hgl.glGetActiveUniform(program, location, 0, NULL, &size, &type, NULL);
+    GLint *params = malloc(size * gles2_typesize(type));
+    hgl.glGetUniformiv(program, location, params);
+
+    GLES2_BARRIER_RET;
+    GLint i;
+    for (i = 0; i < size; i++, paramsp += sizeof(TGLint)) {
+        gles2_put_TGLint(s, paramsp, params[i]);
+    }
+    free(params);
+}
 
 GLES2_CB(glGetUniformLocation)
 {
@@ -1120,15 +1235,13 @@ GLES2_CB(glBlendFuncSeparate)
     hgl.glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
 }
 
-
-#if 0
-GL_APICALL void GL_APIENTRY glValidateProgram (GLuint program)
+GLES2_CB(glValidateProgram)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, program);
+    GLES2_BARRIER_ARG_NORET;
+
+    hgl.glValidateProgram(program);
 }
-#endif // 0
-
-
 
 GLES2_CB(glStencilFuncSeparate)
 {
