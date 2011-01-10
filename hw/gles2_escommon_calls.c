@@ -33,9 +33,45 @@ GLES2_CB(glBlendFunc)
     hgl.glBlendFunc(sfactor, dfactor);
 }
 
-//FIXME: couldnt find glBufferData implementation
+GLES2_CB(glBufferData)
+{
+    GLES2_ARG(TGLenum, target);
+    GLES2_ARG(TGLsizei, size);
+    GLES2_ARG(Tptr, datap);
+    GLES2_ARG(TGLenum, usage);
 
-//FIXME: couldnt find glBufferSubData implementation
+    void *data = NULL;
+    if (datap) {
+        data = malloc(size);
+        gles2_transfer(s, datap, size, data, 0);
+    }
+    GLES2_BARRIER_ARG_NORET;
+
+    hgl.glBufferData(target, size, data, usage);
+    if (data) {
+        free(data);
+    }
+}
+
+GLES2_CB(glBufferSubData)
+{
+    GLES2_ARG(TGLenum, target);
+    GLES2_ARG(TGLint, offset);
+    GLES2_ARG(TGLsizei, size);
+    GLES2_ARG(Tptr, datap);
+
+    void *data = NULL;
+    if (datap) {
+        data = malloc(size);
+        gles2_transfer(s, datap, size, data, 0);
+    }
+    GLES2_BARRIER_ARG_NORET;
+
+    hgl.glBufferSubData(target, offset, size, data);
+    if (data) {
+        free(data);
+    }
+}
 
 GLES2_CB(glClear)
 {
