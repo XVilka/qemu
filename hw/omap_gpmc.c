@@ -1034,12 +1034,13 @@ struct omap_gpmc_s *omap_gpmc_init(struct omap_mpu_state_s *mpu,
     for (cs = 0; cs < 8; cs++) {
         s->cs_file[cs].iomemtype = cpu_register_io_memory(omap_nand_readfn,
                                                           omap_nand_writefn,
-                                                          &s->cs_file[cs]);
+                                                          &s->cs_file[cs],
+                                                          DEVICE_NATIVE_ENDIAN);
     }
 
     s->prefetch.iomemtype = cpu_register_io_memory(omap_gpmc_prefetch_readfn,
                                                    omap_gpmc_prefetch_writefn,
-                                                   s);
+                                                   s, DEVICE_NATIVE_ENDIAN);
     return s;
 }
 
