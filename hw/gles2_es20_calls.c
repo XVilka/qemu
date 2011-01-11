@@ -276,13 +276,22 @@ GLES2_CB(glGetVertexAttribiv)
     gles2_put_TGLint(s, paramsp, params);
 }
 
-#if 0
-GL_APICALL void GL_APIENTRY hgl.glGetVertexAttribPointerv(GLuint index,
-    GLenum pname, void** pointer)
+GLES2_CB(glGetVertexAttribPointerv)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, index);
+    GLES2_ARG(TGLenum, pname);
+    GLES2_ARG(Tptr, pointerp);
+    GLES2_BARRIER_ARG;
+
+    if (pname != GL_VERTEX_ATTRIB_ARRAY_POINTER) {
+        GLES2_PRINT("ERROR: unknown pname 0x%x!\n", pname);
+    }
+    gles2_Context *ctx = c->context[context_index];
+    gles2_Array *va = ctx->arrays + index;
+
+    GLES2_BARRIER_RET;
+    gles2_put_Tptr(s, pointerp, va->tptr);
 }
-#endif //0
 
 GLES2_CB(glVertexAttrib1f)
 {
@@ -399,59 +408,6 @@ GLES2_CB(glVertexAttribPointer)
     va->tptr = tptr;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-GL_APICALL void GL_APIENTRY hgl.glCompressedTexImage2D(GLenum target,
-    GLint level, GLenum internalformat, GLsizei width, GLsizei height,
-    GLint border, GLsizei imageSize, const void* data)
-{
-    DUMMY();
-}
-
-GL_APICALL void GL_APIENTRY hgl.glCompressedTexSubImage2D(GLenum target,
-    GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height,
-    GLenum format, GLsizei imageSize, const void* data)
-{
-    DUMMY();
-}
-
-GL_APICALL void GL_APIENTRY hgl.glCopyTexImage2D(GLenum target, GLint level,
-    GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height,
-    GLint border)
-{
-    DUMMY();
-}
-
-GL_APICALL void GL_APIENTRY hgl.glCopyTexSubImage2D(GLenum target, GLint level,
-    GLint xoffset, GLint yoffset, GLint x, GLint y,
-    GLsizei width, GLsizei height)
-{
-    DUMMY();
-}
-#endif // 0
-
-
 GLES2_CB(glGenerateMipmap)
 {
     GLES2_ARG(TGLenum, target);
@@ -459,20 +415,6 @@ GLES2_CB(glGenerateMipmap)
 
     hgl.glGenerateMipmap(target);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 GLES2_CB(glCompileShader)
 {
@@ -539,19 +481,42 @@ GLES2_CB(glGetShaderInfoLog)
     free(infolog);
 }
 
-#if 0
-GL_APICALL void GL_APIENTRY hgl.glGetShaderPrecisionFormat(GLenum shadertype,
-    GLenum precisiontype, GLint* range, GLint* precision)
+GLES2_CB(glGetShaderPrecisionFormat)
 {
-    DUMMY();
+    GLES2_ARG(TGLenum, shadertype);
+    GLES2_ARG(TGLenum, precisiontype);
+    GLES2_ARG(Tptr, rangep);
+    GLES2_ARG(Tptr, precisionp);
+    GLES2_BARRIER_ARG;
+
+    GLint range[2] = {0, 0};
+    GLint precision = 0;
+    hgl.glGetShaderPrecisionFormat(shadertype, precisiontype, range, &precision);
+
+    GLES2_BARRIER_RET;
+    gles2_put_TGLint(s, rangep, range[0]);
+    gles2_put_TGLint(s, rangep + sizeof(TGLint), range[1]);
+    gles2_put_TGLint(s, precisionp, precision);
 }
 
-GL_APICALL void GL_APIENTRY hgl.glGetShaderSource(GLuint shader, GLsizei bufsize,
-    GLsizei* length, char* source)
+GLES2_CB(glGetShaderSource)
 {
-    DUMMY();
+    GLES2_ARG(TGLuint, shader);
+    GLES2_ARG(TGLsizei, bufsize);
+    GLES2_ARG(Tptr, lengthp);
+    GLES2_ARG(Tptr, sourcep);
+    GLES2_BARRIER_ARG;
+
+    GLsizei length = 0;
+    char *source = malloc(bufsize);
+    hgl.glGetShaderSource(shader, bufsize, &length, source);
+
+    GLES2_BARRIER_RET;
+    if (lengthp) {
+        gles2_put_TGLsizei(s, lengthp, length);
+    }
+    gles2_transfer(s, sourcep, length + 1, source, 1);
 }
-#endif // 0
 
 GLES2_CB(glReleaseShaderCompiler)
 {
@@ -560,10 +525,16 @@ GLES2_CB(glReleaseShaderCompiler)
 }
 
 #if 0
-GL_APICALL void GL_APIENTRY hgl.glShaderBinary(GLsizei n, const GLuint* shaders,
-    GLenum binaryformat, const void* binary, GLsizei length)
+GLES2_CB(glShaderBinary)
 {
-    DUMMY();
+    GLES2_ARG(TGLsizei, n);
+    GLES2_ARG(Tptr, shadersp); /* const GLuint* */
+    GLES2_ARG(TGLenum, binaryformat);
+    GLES2_ARG(Tptr, binaryp);  /* const void* */
+    GLES2_ARG(TGLsizei, length);
+    GLES2_BARRIER_ARG;
+
+    GLES2_BARRIER_RET;
 }
 #endif // 0
 
@@ -630,9 +601,6 @@ GLES2_CB(glBindAttribLocation)
     GLES2_PRINT("Binding attribute %s at %d...\n", name, index);
     hgl.glBindAttribLocation(program, index, name);
 }
-
-
-
 
 GLES2_CB(glCreateProgram)//(void)
 {
@@ -1268,7 +1236,6 @@ GLES2_CB(glStencilFuncSeparate)
     hgl.glStencilFuncSeparate(face, func, ref, mask);
 }
 
-
 GLES2_CB(glStencilMaskSeparate)
 {
     GLES2_ARG(TGLenum, face);
@@ -1277,7 +1244,6 @@ GLES2_CB(glStencilMaskSeparate)
 
     hgl.glStencilMaskSeparate(face, mask);
 }
-
 
 GLES2_CB(glStencilOpSeparate)
 {
