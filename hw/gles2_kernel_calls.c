@@ -175,7 +175,7 @@ void* gles2_client_worker(void *opaque)
         pthread_mutex_unlock(&client->mutex_wait);
 
         if (client->call) {
-            GLES2_PRINT("WORKER(%d): Calling function %s (%p)...\n",
+            GLES2_TRACE("WORKER(%d): Calling function %s (%p)...\n",
                         client->nr, client->call->name, client->call);
             client->call->callback(client->s, &d, client);
 #if(GLES2_DEBUG == 1)

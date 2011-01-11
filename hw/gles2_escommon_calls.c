@@ -440,7 +440,7 @@ GLES2_CB(glGetError)
     GLES2_BARRIER_RET;
 
     if (error != GL_NO_ERROR) {
-        fprintf(stderr, "WARNING: Previous call to function %s caused an error %d!\n",
+        fprintf(stderr, "WARNING: Previous call to function %s caused an error 0x%x!\n",
             c->prev_call->name, error);
     }
     gles2_ret_TGLenum(s, error);

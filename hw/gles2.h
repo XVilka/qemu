@@ -72,12 +72,21 @@
 #define GLES2_DEBUG 0
 #if(GLES2_DEBUG == 1)
 #   define GLES2_DEBUG_ARGS 1
+#   define GLES2_TRACING 1
 #   define GLES2_PRINT(format, args...) \
         fprintf(stderr, "QEMU: " format, ##args)
 #else
 #   define GLES2_DEBUG_ARGS 0
 #   define GLES2_PRINT(format, args...) (void)0
+#   define GLES2_TRACING 0
 #endif // GLES2_DEBUG != 1
+
+#if(GLES2_TRACING == 1)
+#   define GLES2_TRACE(format, args...) \
+        fprintf(stderr, "QEMU: " format, ##args)
+#else
+#   define GLES2_TRACE(format, args...) (void)0
+#endif // GLES2_TRACING
 
 /* function name */
 #define FNAME(func, api, sufix) \
