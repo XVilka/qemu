@@ -497,15 +497,24 @@ void *gles2_init(CPUState *env)
 
     //register EGL
     GLES2_PRINT("Mapping EGL Block to : %x\n", GLES2_EGL_HWBASE);
-    cpu_register_physical_memory(GLES2_EGL_HWBASE, GLES2_BLOCKSIZE, cpu_register_io_memory(gles2_readfn, gles2_egl_writefn, s));
+    cpu_register_physical_memory(GLES2_EGL_HWBASE, GLES2_BLOCKSIZE,
+                                 cpu_register_io_memory(gles2_readfn,
+                                                        gles2_egl_writefn, s,
+                                                        DEVICE_NATIVE_ENDIAN));
 
     //register ES11
     GLES2_PRINT("Mapping ES11 Block to : %x\n", GLES2_ES11_HWBASE);
-    cpu_register_physical_memory(GLES2_ES11_HWBASE, GLES2_BLOCKSIZE, cpu_register_io_memory(gles2_readfn, gles2_es11_writefn, s));
+    cpu_register_physical_memory(GLES2_ES11_HWBASE, GLES2_BLOCKSIZE,
+                                 cpu_register_io_memory(gles2_readfn,
+                                                        gles2_es11_writefn, s,
+                                                        DEVICE_NATIVE_ENDIAN));
 
     //register ES20
     GLES2_PRINT("Mapping ES20 Block to : %x\n", GLES2_ES20_HWBASE);
-    cpu_register_physical_memory(GLES2_ES20_HWBASE, GLES2_BLOCKSIZE, cpu_register_io_memory(gles2_readfn, gles2_es20_writefn, s));
+    cpu_register_physical_memory(GLES2_ES20_HWBASE, GLES2_BLOCKSIZE,
+                                 cpu_register_io_memory(gles2_readfn,
+                                                        gles2_es20_writefn, s,
+                                                        DEVICE_NATIVE_ENDIAN));
 
     for (i = 0; i < GLES2_NCLIENTS; ++i) {
         s->clients[i] = NULL;
@@ -522,7 +531,3 @@ void *gles2_init(CPUState *env)
 
     return s;
 }
-
-
-
-
