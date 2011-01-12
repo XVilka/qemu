@@ -370,7 +370,6 @@ GLES2_CB(glGetPointerv)
 
     default:
         GLES2_PRINT("ERROR: Unknown pname 0x%x in glGetPointerv!\n", pname);
-        //exit(0);
         break;
     }
 
@@ -399,8 +398,7 @@ GLES2_CB(glEnableClientState)
         break;
 
     default:
-        GLES2_PRINT("ERROR: Unknown array 0x%x in glDisableClientState!\n", array);
-        exit(0);
+        GLES2_PRINT("ERROR: Unknown array 0x%x in glEnableClientState!\n", array);
         break;
     }
     hgl.glEnableClientState(array);
@@ -429,7 +427,6 @@ GLES2_CB(glDisableClientState)
 
     default:
         GLES2_PRINT("ERROR: Unknown array 0x%x in glDisableClientState!\n", array);
-        exit(0);
         break;
     }
 
