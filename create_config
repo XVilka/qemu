@@ -98,6 +98,9 @@ case $line in
     value=${line#*=}
     echo "#define $name $value"
     ;;
+ GLES2_DEBUG=y)
+    echo "#define GLES2_DEBUG 1"
+    ;;
 esac
 
 done # read

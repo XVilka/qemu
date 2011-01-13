@@ -69,7 +69,10 @@
 // Return the page offset part of address.
 #define TARGET_OFFSET(addr) ((addr) & (TARGET_PAGE_SIZE - 1))
 
-#define GLES2_DEBUG 0
+#ifndef GLES2_DEBUG
+#   define GLES2_DEBUG 0
+#endif
+
 #if(GLES2_DEBUG == 1)
 #   define GLES2_DEBUG_ARGS 1
 #   define GLES2_TRACING 1

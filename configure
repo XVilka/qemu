@@ -570,6 +570,8 @@ for opt do
       debug="yes"
       strip_opt="no"
   ;;
+  --enable-debug-gles2) debug_gles2="yes"
+  ;;
   --enable-sparse) sparse="yes"
   ;;
   --disable-sparse) sparse="no"
@@ -850,6 +852,7 @@ echo "  --bindir=PATH            install binaries in PATH"
 echo "  --sysconfdir=PATH        install config in PATH/qemu"
 echo "  --enable-debug-tcg       enable TCG debugging"
 echo "  --disable-debug-tcg      disable TCG debugging (default)"
+echo "  --enable-debug-gles2     enable gles2 debug messages"
 echo "  --enable-debug           enable common debug build options"
 echo "  --enable-sparse          enable sparse checker"
 echo "  --disable-sparse         disable sparse checker (default)"
@@ -2544,6 +2547,10 @@ fi
 if test "$debug" = "yes" ; then
   echo "CONFIG_DEBUG_EXEC=y" >> $config_host_mak
 fi
+if test "$debug_gles2" = "yes" ; then
+  echo "GLES2_DEBUG=y" >> $config_host_mak
+fi
+
 if test "$strip_opt" = "yes" ; then
   echo "STRIP=${strip}" >> $config_host_mak
 fi
