@@ -1,3 +1,85 @@
+static unsigned gles2_glTexParameterCount(TGLenum pname)
+{
+    unsigned count;
+
+    switch(pname) {
+        case GL_TEXTURE_MIN_FILTER: count = 1; break;
+        case GL_TEXTURE_MAG_FILTER: count = 1; break;
+        case GL_TEXTURE_WRAP_S: count = 1; break;
+        case GL_TEXTURE_WRAP_T: count = 1; break;
+        default:
+            GLES2_PRINT("ERROR: Unknown texture parameter 0x%x!\n", pname);
+            count = 1;
+            break;
+    }
+
+    return count;
+}
+
+static void gles2_TransferArrays(gles2_State *s, gles2_Context *c,
+    TGLint first, TGLsizei count)
+{
+    int i;
+
+    for(i = 0; i < c->narrays; ++i) {
+        gles2_Array* va = c->arrays + i;
+        if(!va->enabled) {
+            continue;
+        }
+        unsigned esize = 1;
+        switch (va->type) {
+            case GL_BYTE:
+            case GL_UNSIGNED_BYTE:  esize = 1; break;
+            case GL_SHORT:
+            case GL_UNSIGNED_SHORT: esize = 2; break;
+            case GL_FIXED:
+            case GL_FLOAT:          esize = 4; break;
+        }
+        if(!va->stride) {
+            va->stride = va->size*esize;
+        }
+
+        if(va->ptr) {
+            free(va->ptr);
+        }
+        unsigned nbytes = esize*count*va->size;
+        va->ptr = malloc(nbytes);
+
+        unsigned int j;
+        for (j = 0; j < count; ++j) {
+            signed k;
+            for (k = 0; k < va->size; ++k) {
+                switch (esize) {
+                    case 1:
+                        ((TGLubyte*)va->ptr)[j*va->size + k] =
+                            gles2_get_byte(s, va->tptr + va->stride*(first + j)
+                            + k*sizeof(TGLubyte));
+                        break;
+                    case 2:
+                        ((TGLushort*)va->ptr)[j*va->size + k] =
+                            gles2_get_word(s, va->tptr + va->stride*(first + j)
+                            + k*sizeof(TGLushort));
+                        break;
+                    case 4:
+                        if(va->type == GL_FLOAT) {
+                            ((TGLfloat*)va->ptr)[j*va->size + k] =
+                                gles2_get_float(s, va->tptr
+                                + va->stride*(first + j)
+                                + k*sizeof(TGLfloat));
+                        } else {
+                            ((TGLuint*)va->ptr)[j*va->size + k] =
+                                gles2_get_dword(s, va->tptr
+                                + va->stride*(first + j)
+                                + k*sizeof(TGLuint));
+                        }
+                        break;
+                }
+            }
+        }
+        va->apply(va);
+    }
+}
+
 GLES2_CB(glActiveTexture)
 {
     GLES2_ARG(TGLenum, texture);
@@ -407,9 +489,9 @@ GLES2_CB(glGetBooleanv)
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG;
 
-    GLboolean params[4];
+    GLboolean params[16];
     hgl.glGetBooleanv(pname, params);
-    unsigned const count = gles2_glGetCount(pname);
+    unsigned const count = gles2_GetCount(pname);
     unsigned i;
     GLES2_BARRIER_RET;
     for(i = 0; i < count; ++i) {
@@ -452,9 +534,9 @@ GLES2_CB(glGetFloatv)
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG;
 
-    GLfloat params[4];
+    GLfloat params[16];
     hgl.glGetFloatv(pname, params);
-    unsigned const count = gles2_glGetCount(pname);
+    unsigned const count = gles2_GetCount(pname);
     unsigned i;
     GLES2_BARRIER_RET;
     for(i = 0; i < count; ++i) {
@@ -468,9 +550,9 @@ GLES2_CB(glGetIntegerv)
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG;
 
-    GLint params[4];
+    GLint params[16];
     hgl.glGetIntegerv(pname, params);
-    unsigned const count = gles2_glGetCount(pname);
+    unsigned const count = gles2_GetCount(pname);
     unsigned i;
     GLES2_BARRIER_RET;
     for(i = 0; i < count; ++i) {

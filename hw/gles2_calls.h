@@ -55,29 +55,9 @@ GLES2_TYPE(TGLfloat, float)
 GLES2_TYPE(TGLfixed, dword)
 GLES2_TYPE(TGLclampx, dword)
 
-
 // Just one more macro for even less typing.
 #define GLES2_ARG(TYPE, NAME) \
     TYPE NAME = gles2_arg_##TYPE(s, d)
-
-unsigned gles1_glGetCount(TGLenum pname);
-void checkGLESError(void);
-
-
-// See if guest offscreen drawable was changed and if so, update host copy.
-int gles2_surface_update(gles2_State *s, gles2_Surface *surf);
-
-// TODO: Support swapping of offscreen surfaces.
-void gles2_eglSwapCallback(void* userdata);
-
-void gles2_TransferArrays(gles2_State *s, gles2_Context *c,
-    TGLint first, TGLsizei count);
-
-unsigned gles2_glGetCount(TGLenum pname);
-
-unsigned gles2_glTexParameterCount(TGLenum pname);
-
-int gles2_getContextArrayIndex(TEGLenum context_client_type);
 
 // Host to guest vertex array copy.
 struct gles2_Array

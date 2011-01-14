@@ -73,43 +73,7 @@ static void gles2_glApplyVertexAttrib(gles2_Array *va)
                                 }
 }
 
-
-// See if guest offscreen drawable was changed and if so, update host copy.
- int gles2_surface_update(gles2_State *s, gles2_Surface *surf)
-{
-    int ret = 0;
-
-    uint32_t width   = gles2_get_dword(s, surf->ddrawp + 0*sizeof(uint32_t));
-    uint32_t height  = gles2_get_dword(s, surf->ddrawp + 1*sizeof(uint32_t));
-    uint32_t depth   = gles2_get_dword(s, surf->ddrawp + 2*sizeof(uint32_t));
-    uint32_t bpp     = gles2_get_dword(s, surf->ddrawp + 3*sizeof(uint32_t));
-    uint32_t pixelsp = gles2_get_dword(s, surf->ddrawp + 4*sizeof(uint32_t));
-
-    if (width != surf->ddraw.width
-         || height != surf->ddraw.height
-         || depth != surf->ddraw.depth) {
-        surf->ddraw.width = width;
-        surf->ddraw.height = height;
-        surf->ddraw.depth = depth;
-        surf->ddraw.bpp = bpp;
-        ret = 1;
-    }
-
-    surf->pixelsp = pixelsp;
-
-    return ret;
-}
-
-// TODO: Support swapping of offscreen surfaces.
- void gles2_eglSwapCallback(void* userdata)
-{
-    (void)userdata;
-    GLES2_PRINT("Swap called!\n");
-}
-
-
-
- unsigned gles2_glGetCount(TGLenum pname)
+static unsigned gles2_GetCount(TGLenum pname)
 {
     GLint count;
     switch(pname) {
@@ -198,33 +162,16 @@ static void gles2_glApplyVertexAttrib(gles2_Array *va)
         case GL_UNPACK_ALIGNMENT: count = 1; break;
         case GL_VIEWPORT: count = 4; break;
         default:
-            GLES2_PRINT("ERROR: Unknown pname 0x%x in glGet!\n", pname);
+            GLES2_PRINT("ERROR: Unknown pname 0x%x in GLES2 GetCount!\n", pname);
             count = 1;
             break;
     }
 
-    GLES2_PRINT("glGet(0x%x) -> %u!\n", pname, count);
+    GLES2_PRINT("GLES2 GetCount(0x%x) -> %u!\n", pname, count);
 
     return (unsigned)count;
 }
 
-unsigned gles2_glTexParameterCount(TGLenum pname)
-{
-    unsigned count;
-
-    switch(pname) {
-        case GL_TEXTURE_MIN_FILTER: count = 1; break;
-        case GL_TEXTURE_MAG_FILTER: count = 1; break;
-        case GL_TEXTURE_WRAP_S: count = 1; break;
-        case GL_TEXTURE_WRAP_T: count = 1; break;
-        default:
-            GLES2_PRINT("ERROR: Unknown texture parameter 0x%x!\n", pname);
-            count = 1;
-            break;
-    }
-
-    return count;
-}
 #include "gles2_escommon_calls.c"
 
 GLES2_CB(glDisableVertexAttribArray)

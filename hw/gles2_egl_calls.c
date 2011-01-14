@@ -17,6 +17,61 @@
     CB(func,egl)
 
 int surf_id = 1;
+/**
+ * used to know the index in %gles2_Client context array
+ * where contexts of type context_client_type are stored
+ * @param context_client_type is the client API.
+ */
+static int gles2_getContextArrayIndex(EGLenum context_client_type)
+{
+    switch (context_client_type) {
+        case EGL_OPENGL_ES_API:
+        case EGL_OPENGL_API:
+            return 0;
+        break;
+        case EGL_OPENVG_API:
+            return 1;
+        break;
+        default:
+            return -1;
+        break;
+    }
+
+}
+
+// See if guest offscreen drawable was changed and if so, update host copy.
+static int gles2_surface_update(gles2_State *s, gles2_Surface *surf)
+{
+    int ret = 0;
+
+    uint32_t width   = gles2_get_dword(s, surf->ddrawp + 0*sizeof(uint32_t));
+    uint32_t height  = gles2_get_dword(s, surf->ddrawp + 1*sizeof(uint32_t));
+    uint32_t depth   = gles2_get_dword(s, surf->ddrawp + 2*sizeof(uint32_t));
+    uint32_t bpp     = gles2_get_dword(s, surf->ddrawp + 3*sizeof(uint32_t));
+    uint32_t pixelsp = gles2_get_dword(s, surf->ddrawp + 4*sizeof(uint32_t));
+
+    if (width != surf->ddraw.width
+         || height != surf->ddraw.height
+         || depth != surf->ddraw.depth) {
+        surf->ddraw.width = width;
+        surf->ddraw.height = height;
+        surf->ddraw.depth = depth;
+        surf->ddraw.bpp = bpp;
+        ret = 1;
+    }
+
+    surf->pixelsp = pixelsp;
+
+    return ret;
+}
+
+// TODO: Support swapping of offscreen surfaces.
+static void gles2_eglSwapCallback(void* userdata)
+{
+    (void)userdata;
+    GLES2_PRINT("Swap called!\n");
+}
+
 
 GLES2_CB(eglGetError)
 {

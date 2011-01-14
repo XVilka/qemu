@@ -74,20 +74,6 @@ void gles1_loadHGL(void)
     #undef DGLES_HGL_FUNC
 }
 
-
-
-//for debug only
-void checkGLESError(void)
-{
-    GLenum error;
-    if ((error = hgl.glGetError()) != 0) {
-        GLES2_PRINT("Error after call 0x%x!\n", error);
-    }
-    else {
-        GLES2_PRINT("Ok after call!\n");
-    }
-}
-
 static void gles1_apply_glColorPointer(gles2_Array *va)
 {
     hgl.glColorPointer(va->size, va->type,
@@ -140,206 +126,188 @@ static void gles1_apply_glVertexPointer(gles2_Array *va)
 }
 
 
-unsigned __attribute__((const)) gles1_glGetCount(TGLenum pname)
+static unsigned gles2_GetCount(TGLenum pname)
 {
     unsigned count;
     switch(pname) {
-        case GL_ACTIVE_TEXTURE:
-        case GL_ALPHA_BITS:
-        case GL_ALPHA_SCALE:
-        case GL_ALPHA_TEST:
-        case GL_ALPHA_TEST_FUNC:
-        case GL_ALPHA_TEST_REF:
-        case GL_BLEND:
-        case GL_BLEND_DST:
-        case GL_BLEND_SRC:
-        case GL_BLUE_BITS:
-        case GL_CLIENT_ACTIVE_TEXTURE:
-        case GL_CLIP_PLANE0:
-        case GL_CLIP_PLANE1:
-        case GL_CLIP_PLANE2:
-        case GL_CLIP_PLANE3:
-        case GL_CLIP_PLANE4:
-        case GL_CLIP_PLANE5:
-        case GL_COLOR_MATERIAL:
-        case GL_CULL_FACE:
-        case GL_CULL_FACE_MODE:
-        case GL_DEPTH_BITS:
-        case GL_DEPTH_CLEAR_VALUE:
-        case GL_DEPTH_FUNC:
-        case GL_DEPTH_TEST:
-        case GL_DEPTH_WRITEMASK:
-        case GL_DITHER:
-        case GL_FOG:
-        case GL_FOG_DENSITY:
-        case GL_FOG_END:
-        case GL_FOG_HINT:
-        case GL_FOG_MODE:
-        case GL_FOG_START:
-        case GL_FRONT_FACE:
-        case GL_GREEN_BITS:
-        case GL_LIGHT0:
-        case GL_LIGHT1:
-        case GL_LIGHT2:
-        case GL_LIGHT3:
-        case GL_LIGHT4:
-        case GL_LIGHT5:
-        case GL_LIGHT6:
-        case GL_LIGHT7:
-        case GL_LIGHTING:
-        case GL_LIGHT_MODEL_TWO_SIDE:
-        case GL_LINE_SMOOTH:
-        case GL_LINE_SMOOTH_HINT:
-        case GL_LINE_WIDTH:
-        case GL_COLOR_LOGIC_OP:
-        case GL_LOGIC_OP_MODE:
-        case GL_MATRIX_MODE:
-        case GL_MAX_CLIP_PLANES:
-        case GL_MAX_LIGHTS:
-        case GL_MAX_MODELVIEW_STACK_DEPTH:
-        case GL_MAX_PROJECTION_STACK_DEPTH:
-        case GL_MAX_TEXTURE_SIZE:
-        case GL_MAX_TEXTURE_STACK_DEPTH:
-        case GL_MAX_TEXTURE_UNITS:
-        case GL_MODELVIEW_STACK_DEPTH:
-        case GL_MULTISAMPLE:
-        case GL_NORMALIZE:
-        case GL_PACK_ALIGNMENT:
-        case GL_PERSPECTIVE_CORRECTION_HINT:
-        case GL_POINT_SIZE:
-        case GL_POINT_SMOOTH:
-        case GL_POINT_SMOOTH_HINT:
-        case GL_POLYGON_OFFSET_FACTOR:
-        case GL_POLYGON_OFFSET_UNITS:
-        case GL_POLYGON_OFFSET_FILL:
-        case GL_PROJECTION_STACK_DEPTH:
-        case GL_RED_BITS:
-        case GL_RESCALE_NORMAL:
-        case GL_SCISSOR_TEST:
-        case GL_SHADE_MODEL:
-        case GL_STENCIL_BITS:
-        case GL_STENCIL_CLEAR_VALUE:
-        case GL_STENCIL_FAIL:
-        case GL_STENCIL_FUNC:
-        case GL_STENCIL_PASS_DEPTH_FAIL:
-        case GL_STENCIL_PASS_DEPTH_PASS:
-        case GL_STENCIL_REF:
-        case GL_STENCIL_TEST:
-        case GL_STENCIL_VALUE_MASK:
-        case GL_STENCIL_WRITEMASK:
-        case GL_SUBPIXEL_BITS:
-        case GL_TEXTURE_2D:
-        case GL_TEXTURE_BINDING_2D:
-        case GL_TEXTURE_STACK_DEPTH:
-        case GL_UNPACK_ALIGNMENT:
-        case GL_VERTEX_ARRAY:
-        case GL_VERTEX_ARRAY_SIZE:
-        case GL_VERTEX_ARRAY_TYPE:
-        case GL_VERTEX_ARRAY_STRIDE:
-        case GL_NORMAL_ARRAY:
-        case GL_NORMAL_ARRAY_TYPE:
-        case GL_NORMAL_ARRAY_STRIDE:
-        case GL_COLOR_ARRAY:
-        case GL_COLOR_ARRAY_SIZE:
-        case GL_COLOR_ARRAY_TYPE:
-        case GL_COLOR_ARRAY_STRIDE:
-        case GL_TEXTURE_COORD_ARRAY:
-        case GL_TEXTURE_COORD_ARRAY_SIZE:
-        case GL_TEXTURE_COORD_ARRAY_TYPE:
-        case GL_TEXTURE_COORD_ARRAY_STRIDE:
-        case GL_IMPLEMENTATION_COLOR_READ_TYPE_OES:
-        case GL_IMPLEMENTATION_COLOR_READ_FORMAT_OES:
-        case GL_SPOT_EXPONENT:
-        case GL_SPOT_CUTOFF:
-        case GL_CONSTANT_ATTENUATION:
-        case GL_LINEAR_ATTENUATION:
-        case GL_QUADRATIC_ATTENUATION:
-        case GL_SHININESS:
-        case GL_TEXTURE_ENV_MODE:
-        case GL_COMBINE_RGB:
-        case GL_COMBINE_ALPHA:
-        case GL_SRC0_RGB:
-        case GL_SRC1_RGB:
-        case GL_SRC2_RGB:
-        case GL_SRC0_ALPHA:
-        case GL_SRC1_ALPHA:
-        case GL_SRC2_ALPHA:
-        case GL_OPERAND0_RGB:
-        case GL_OPERAND1_RGB:
-        case GL_OPERAND2_RGB:
-        case GL_OPERAND0_ALPHA:
-        case GL_OPERAND1_ALPHA:
-        case GL_OPERAND2_ALPHA:
-        case GL_RGB_SCALE:
-        case GL_POINT_SIZE_MIN:
-        case GL_POINT_SIZE_MAX:
-        case GL_POINT_FADE_THRESHOLD_SIZE:
-        case GL_SAMPLE_ALPHA_TO_COVERAGE:
-        case GL_SAMPLE_ALPHA_TO_ONE:
-        case GL_SAMPLE_COVERAGE:
-        case GL_SAMPLE_COVERAGE_VALUE:
-        case GL_SAMPLE_COVERAGE_INVERT:
-        case GL_SAMPLE_BUFFERS:
-        case GL_SAMPLES:
-        case GL_POINT_SPRITE_OES:
-        case GL_ARRAY_BUFFER_BINDING:
-        case GL_VERTEX_ARRAY_BUFFER_BINDING:
-        case GL_NORMAL_ARRAY_BUFFER_BINDING:
-        case GL_COLOR_ARRAY_BUFFER_BINDING:
-        case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING:
-        case GL_ELEMENT_ARRAY_BUFFER_BINDING:
-
-          count = 1;
-          break;
-
-        case GL_DEPTH_RANGE:
-        case GL_ALIASED_LINE_WIDTH_RANGE:
-        case GL_MAX_VIEWPORT_DIMS:
-        case GL_ALIASED_POINT_SIZE_RANGE:
-        case GL_SMOOTH_LINE_WIDTH_RANGE:
-        case GL_SMOOTH_POINT_SIZE_RANGE:
-          count = 2;
-          break;
-
-        case GL_CURRENT_NORMAL:
-        case GL_SPOT_DIRECTION:
-        case GL_POINT_DISTANCE_ATTENUATION:
-          count = 3;
-          break;
-
-        case GL_COLOR_CLEAR_VALUE:
-        case GL_COLOR_WRITEMASK:
-        case GL_CURRENT_COLOR:
-        case GL_CURRENT_TEXTURE_COORDS:
-        case GL_FOG_COLOR:
-        case GL_LIGHT_MODEL_AMBIENT:
-        case GL_SCISSOR_BOX:
-        case GL_VIEWPORT:
-        case GL_AMBIENT:
-        case GL_DIFFUSE:
-        case GL_SPECULAR:
-        case GL_EMISSION:
-        case GL_TEXTURE_ENV_COLOR:
-        case GL_POSITION:
-        case GL_AMBIENT_AND_DIFFUSE:
-          count = 4;
-          break;
-
-
-        case GL_MODELVIEW_MATRIX:
-        case GL_PROJECTION_MATRIX:
-        case GL_TEXTURE_MATRIX:
-          count = 16;
-          break;
-
+        case GL_ACTIVE_TEXTURE: count=1; break;
+        case GL_ALIASED_LINE_WIDTH_RANGE: count=2; break;
+        case GL_ALIASED_POINT_SIZE_RANGE: count=2; break;
+        case GL_ALPHA_BITS: count=1; break;
+        case GL_ALPHA_SCALE: count=1; break;
+        case GL_ALPHA_TEST: count=1; break;
+        case GL_ALPHA_TEST_FUNC: count=1; break;
+        case GL_ALPHA_TEST_REF: count=1; break;
+        case GL_AMBIENT: count=4; break;
+        case GL_AMBIENT_AND_DIFFUSE: count=4; break;
+        case GL_ARRAY_BUFFER_BINDING: count=1; break;
+        case GL_BLEND: count=1; break;
+        case GL_BLEND_DST: count=1; break;
+        case GL_BLEND_SRC: count=1; break;
+        case GL_BLUE_BITS: count=1; break;
+        case GL_CLIENT_ACTIVE_TEXTURE: count=1; break;
+        case GL_CLIP_PLANE0: count=1; break;
+        case GL_CLIP_PLANE1: count=1; break;
+        case GL_CLIP_PLANE2: count=1; break;
+        case GL_CLIP_PLANE3: count=1; break;
+        case GL_CLIP_PLANE4: count=1; break;
+        case GL_CLIP_PLANE5: count=1; break;
+        case GL_COLOR_ARRAY: count=1; break;
+        case GL_COLOR_ARRAY_BUFFER_BINDING: count=1; break;
+        case GL_COLOR_ARRAY_SIZE: count=1; break;
+        case GL_COLOR_ARRAY_STRIDE: count=1; break;
+        case GL_COLOR_ARRAY_TYPE: count=1; break;
+        case GL_COLOR_CLEAR_VALUE: count=4; break;
+        case GL_COLOR_LOGIC_OP: count=1; break;
+        case GL_COLOR_MATERIAL: count=1; break;
+        case GL_COLOR_WRITEMASK: count=4; break;
+        case GL_COMBINE_ALPHA: count=1; break;
+        case GL_COMBINE_RGB: count=1; break;
+        case GL_CONSTANT_ATTENUATION: count=1; break;
+        case GL_CULL_FACE: count=1; break;
+        case GL_CULL_FACE_MODE: count=1; break;
+        case GL_CURRENT_COLOR: count=4; break;
+        case GL_CURRENT_NORMAL: count=3; break;
+        case GL_CURRENT_TEXTURE_COORDS: count=4; break;
+        case GL_DEPTH_BITS: count=1; break;
+        case GL_DEPTH_CLEAR_VALUE: count=1; break;
+        case GL_DEPTH_FUNC: count=1; break;
+        case GL_DEPTH_RANGE: count=2; break;
+        case GL_DEPTH_TEST: count=1; break;
+        case GL_DEPTH_WRITEMASK: count=1; break;
+        case GL_DIFFUSE: count=4; break;
+        case GL_DITHER: count=1; break;
+        case GL_ELEMENT_ARRAY_BUFFER_BINDING: count=1; break;
+        case GL_EMISSION: count=4; break;
+        case GL_FOG: count=1; break;
+        case GL_FOG_COLOR: count=4; break;
+        case GL_FOG_DENSITY: count=1; break;
+        case GL_FOG_END: count=1; break;
+        case GL_FOG_HINT: count=1; break;
+        case GL_FOG_MODE: count=1; break;
+        case GL_FOG_START: count=1; break;
+        case GL_FRONT_FACE: count=1; break;
+        case GL_GREEN_BITS: count=1; break;
+        case GL_IMPLEMENTATION_COLOR_READ_FORMAT_OES: count=1; break;
+        case GL_IMPLEMENTATION_COLOR_READ_TYPE_OES: count=1; break;
+        case GL_LIGHT0: count=1; break;
+        case GL_LIGHT1: count=1; break;
+        case GL_LIGHT2: count=1; break;
+        case GL_LIGHT3: count=1; break;
+        case GL_LIGHT4: count=1; break;
+        case GL_LIGHT5: count=1; break;
+        case GL_LIGHT6: count=1; break;
+        case GL_LIGHT7: count=1; break;
+        case GL_LIGHTING: count=1; break;
+        case GL_LIGHT_MODEL_AMBIENT: count=4; break;
+        case GL_LIGHT_MODEL_TWO_SIDE: count=1; break;
+        case GL_LINEAR_ATTENUATION: count=1; break;
+        case GL_LINE_SMOOTH: count=1; break;
+        case GL_LINE_SMOOTH_HINT: count=1; break;
+        case GL_LINE_WIDTH: count=1; break;
+        case GL_LOGIC_OP_MODE: count=1; break;
+        case GL_MATRIX_MODE: count=1; break;
+        case GL_MAX_CLIP_PLANES: count=1; break;
+        case GL_MAX_LIGHTS: count=1; break;
+        case GL_MAX_MODELVIEW_STACK_DEPTH: count=1; break;
+        case GL_MAX_PROJECTION_STACK_DEPTH: count=1; break;
+        case GL_MAX_TEXTURE_SIZE: count=1; break;
+        case GL_MAX_TEXTURE_STACK_DEPTH: count=1; break;
+        case GL_MAX_TEXTURE_UNITS: count=1; break;
+        case GL_MAX_VIEWPORT_DIMS: count=2; break;
+        case GL_MODELVIEW_MATRIX: count=16; break;
+        case GL_MODELVIEW_STACK_DEPTH: count=1; break;
+        case GL_MULTISAMPLE: count=1; break;
+        case GL_NORMALIZE: count=1; break;
+        case GL_NORMAL_ARRAY: count=1; break;
+        case GL_NORMAL_ARRAY_BUFFER_BINDING: count=1; break;
+        case GL_NORMAL_ARRAY_STRIDE: count=1; break;
+        case GL_NORMAL_ARRAY_TYPE: count=1; break;
+        case GL_OPERAND0_ALPHA: count=1; break;
+        case GL_OPERAND0_RGB: count=1; break;
+        case GL_OPERAND1_ALPHA: count=1; break;
+        case GL_OPERAND1_RGB: count=1; break;
+        case GL_OPERAND2_ALPHA: count=1; break;
+        case GL_OPERAND2_RGB: count=1; break;
+        case GL_PACK_ALIGNMENT: count=1; break;
+        case GL_PERSPECTIVE_CORRECTION_HINT: count=1; break;
+        case GL_POINT_DISTANCE_ATTENUATION: count=3; break;
+        case GL_POINT_FADE_THRESHOLD_SIZE: count=1; break;
+        case GL_POINT_SIZE: count=1; break;
+        case GL_POINT_SIZE_MAX: count=1; break;
+        case GL_POINT_SIZE_MIN: count=1; break;
+        case GL_POINT_SMOOTH: count=1; break;
+        case GL_POINT_SMOOTH_HINT: count=1; break;
+        case GL_POINT_SPRITE_OES: count=1; break;
+        case GL_POLYGON_OFFSET_FACTOR: count=1; break;
+        case GL_POLYGON_OFFSET_FILL: count=1; break;
+        case GL_POLYGON_OFFSET_UNITS: count=1; break;
+        case GL_POSITION: count=4; break;
+        case GL_PROJECTION_MATRIX: count=16; break;
+        case GL_PROJECTION_STACK_DEPTH: count=1; break;
+        case GL_QUADRATIC_ATTENUATION: count=1; break;
+        case GL_RED_BITS: count=1; break;
+        case GL_RESCALE_NORMAL: count=1; break;
+        case GL_RGB_SCALE: count=1; break;
+        case GL_SAMPLES: count=1; break;
+        case GL_SAMPLE_ALPHA_TO_COVERAGE: count=1; break;
+        case GL_SAMPLE_ALPHA_TO_ONE: count=1; break;
+        case GL_SAMPLE_BUFFERS: count=1; break;
+        case GL_SAMPLE_COVERAGE: count=1; break;
+        case GL_SAMPLE_COVERAGE_INVERT: count=1; break;
+        case GL_SAMPLE_COVERAGE_VALUE: count=1; break;
+        case GL_SCISSOR_BOX: count=4; break;
+        case GL_SCISSOR_TEST: count=1; break;
+        case GL_SHADE_MODEL: count=1; break;
+        case GL_SHININESS: count=1; break;
+        case GL_SMOOTH_LINE_WIDTH_RANGE: count=2; break;
+        case GL_SMOOTH_POINT_SIZE_RANGE: count=2; break;
+        case GL_SPECULAR: count=4; break;
+        case GL_SPOT_CUTOFF: count=1; break;
+        case GL_SPOT_DIRECTION: count=3; break;
+        case GL_SPOT_EXPONENT: count=1; break;
+        case GL_SRC0_ALPHA: count=1; break;
+        case GL_SRC0_RGB: count=1; break;
+        case GL_SRC1_ALPHA: count=1; break;
+        case GL_SRC1_RGB: count=1; break;
+        case GL_SRC2_ALPHA: count=1; break;
+        case GL_SRC2_RGB: count=1; break;
+        case GL_STENCIL_BITS: count=1; break;
+        case GL_STENCIL_CLEAR_VALUE: count=1; break;
+        case GL_STENCIL_FAIL: count=1; break;
+        case GL_STENCIL_FUNC: count=1; break;
+        case GL_STENCIL_PASS_DEPTH_FAIL: count=1; break;
+        case GL_STENCIL_PASS_DEPTH_PASS: count=1; break;
+        case GL_STENCIL_REF: count=1; break;
+        case GL_STENCIL_TEST: count=1; break;
+        case GL_STENCIL_VALUE_MASK: count=1; break;
+        case GL_STENCIL_WRITEMASK: count=1; break;
+        case GL_SUBPIXEL_BITS: count=1; break;
+        case GL_TEXTURE_2D: count=1; break;
+        case GL_TEXTURE_BINDING_2D: count=1; break;
+        case GL_TEXTURE_COORD_ARRAY: count=1; break;
+        case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING: count=1; break;
+        case GL_TEXTURE_COORD_ARRAY_SIZE: count=1; break;
+        case GL_TEXTURE_COORD_ARRAY_STRIDE: count=1; break;
+        case GL_TEXTURE_COORD_ARRAY_TYPE: count=1; break;
+        case GL_TEXTURE_ENV_COLOR: count=4; break;
+        case GL_TEXTURE_ENV_MODE: count=1; break;
+        case GL_TEXTURE_MATRIX: count=16; break;
+        case GL_TEXTURE_STACK_DEPTH: count=1; break;
+        case GL_UNPACK_ALIGNMENT: count=1; break;
+        case GL_VERTEX_ARRAY: count=1; break;
+        case GL_VERTEX_ARRAY_BUFFER_BINDING: count=1; break;
+        case GL_VERTEX_ARRAY_SIZE: count=1; break;
+        case GL_VERTEX_ARRAY_STRIDE: count=1; break;
+        case GL_VERTEX_ARRAY_TYPE: count=1; break;
+        case GL_VIEWPORT: count=4; break;
         default:
-            //GLES2_PRINT("ERROR: Unknown pname 0x%x in glGet!\n", pname);
-            //exit(0);
+            GLES2_PRINT("ERROR: Unknown pname 0x%x in GLES1 GetCount!\n", pname);
             count = 1;
             break;
     }
 
-    //GLES2_PRINT("glGet(0x%x) -> %u!\n", pname, count);
+    GLES2_PRINT("GLES1 GetCount(0x%x) -> %u!\n", pname, count);
 
     return count;
 }
@@ -484,7 +452,7 @@ GLES2_CB(glFogfv)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -513,7 +481,7 @@ GLES2_CB(glGetClipPlanef)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, eqnp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat eqn [16];
 
     hgl.glGetClipPlanef(pname, eqn);
@@ -529,7 +497,7 @@ GLES2_CB(glGetLightfv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
 
     hgl.glGetLightfv(light, pname, params);
@@ -545,7 +513,7 @@ GLES2_CB(glGetMaterialfv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
 
     hgl.glGetMaterialfv(face, pname, params);
@@ -561,7 +529,7 @@ GLES2_CB(glGetTexEnvfv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
 
     hgl.glGetTexEnvfv(env, pname, params);
@@ -585,7 +553,7 @@ GLES2_CB(glLightModelfv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -610,7 +578,7 @@ GLES2_CB(glLightfv)
     GLES2_ARG(TGLenum, light);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -650,7 +618,7 @@ GLES2_CB(glMaterialfv)
     GLES2_ARG(TGLenum, face);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -723,7 +691,7 @@ GLES2_CB(glPointParameterfv)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -778,7 +746,7 @@ GLES2_CB(glTexEnvfv)
     GLES2_ARG(TGLenum, target);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfloat params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -915,7 +883,7 @@ GLES2_CB(glFogxv)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -944,7 +912,7 @@ GLES2_CB(glGetClipPlanex)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, eqnp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed eqn [16];
 
     hgl.glGetClipPlanex(pname, eqn);
@@ -959,7 +927,7 @@ GLES2_CB(glGetFixedv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
 
     hgl.glGetFixedv(pname, params);
@@ -975,7 +943,7 @@ GLES2_CB(glGetLightxv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
 
     hgl.glGetLightxv(light, pname, params);
@@ -991,7 +959,7 @@ GLES2_CB(glGetMaterialxv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
 
     hgl.glGetMaterialxv(face, pname, params);
@@ -1007,7 +975,7 @@ GLES2_CB(glGetTexEnviv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLint params [16];
 
     hgl.glGetTexEnviv(env, pname, params);
@@ -1023,7 +991,7 @@ GLES2_CB(glGetTexEnvxv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
 
     hgl.glGetTexEnvxv(env, pname, params);
@@ -1039,7 +1007,7 @@ GLES2_CB(glGetTexParameterxv)
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
     GLES2_BARRIER_ARG_NORET;
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
 
     hgl.glGetTexParameterxv(target, pname, params);
@@ -1062,7 +1030,7 @@ GLES2_CB(glLightModelxv)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -1088,7 +1056,7 @@ GLES2_CB(glLightxv)
     GLES2_ARG(TGLenum, light);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -1151,7 +1119,7 @@ GLES2_CB(glMaterialxv)
     GLES2_ARG(TGLenum, face);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -1251,7 +1219,7 @@ GLES2_CB(glPointParameterxv)
 {
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -1376,7 +1344,7 @@ GLES2_CB(glTexEnviv)
     GLES2_ARG(TGLenum, target);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLint params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -1392,7 +1360,7 @@ GLES2_CB(glTexEnvxv)
     GLES2_ARG(TGLenum, target);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
@@ -1418,7 +1386,7 @@ GLES2_CB(glTexParameterxv)
     GLES2_ARG(TGLenum, target);
     GLES2_ARG(TGLenum, pname);
     GLES2_ARG(Tptr, paramsp);
-    unsigned count = gles1_glGetCount(pname);
+    unsigned count = gles2_GetCount(pname);
     GLfixed params [16];
     unsigned i = 0;
     for (i = 0; i < count; ++i) {
