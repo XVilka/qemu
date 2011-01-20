@@ -36,16 +36,19 @@ static HGL hgl;
 
 
 // Numbers from c->array's end
-#define gles1_num_glColorPointer    1
-#define gles1_num_glNormalPointer   2
-#define gles1_num_glTexCoordPointer 3
-#define gles1_num_glVertexPointer   4
+#define gles1_num_glColorPointer     1
+#define gles1_num_glNormalPointer    2
+#define gles1_num_glTexCoordPointer  3
+#define gles1_num_glVertexPointer    4
+#define gles1_num_glPointSizePointer 5
 
 #define gles1_size_glNormalPointer 3
+#define gles1_size_glPointSizePointer 1
 static void gles1_apply_glVertexPointer(gles2_Array *va);
 static void gles1_apply_glTexCoordPointer(gles2_Array *va);
 static void gles1_apply_glNormalPointer(gles2_Array *va);
 static void gles1_apply_glColorPointer(gles2_Array *va);
+static void gles1_apply_glPointSizePointer(gles2_Array *va);
 
 void gles1_loadHGL(void);
 void gles1_loadHGL(void)
@@ -125,6 +128,16 @@ static void gles1_apply_glVertexPointer(gles2_Array *va)
     }
 }
 
+static void gles1_apply_glPointSizePointer(gles2_Array *va)
+{
+    hgl.glPointSizePointerOES(va->type, 0, va->ptr);
+    GLenum error;
+    
+    if ((error = hgl.glGetError()) != GL_NO_ERROR) {
+        GLES2_PRINT("glPointSizePointerOES(0x%x, %d, %p) failed with 0x%x!\n",
+                    va->type, va->stride, va->ptr, error);
+    }
+}
 
 static unsigned gles2_GetCount(TGLenum pname)
 {
@@ -234,6 +247,10 @@ static unsigned gles2_GetCount(TGLenum pname)
         case GL_POINT_DISTANCE_ATTENUATION: count=3; break;
         case GL_POINT_FADE_THRESHOLD_SIZE: count=1; break;
         case GL_POINT_SIZE: count=1; break;
+        case GL_POINT_SIZE_ARRAY_BUFFER_BINDING_OES: count = 1; break;
+        case GL_POINT_SIZE_ARRAY_OES: count = 1; break;
+        case GL_POINT_SIZE_ARRAY_STRIDE_OES: count = 1; break;
+        case GL_POINT_SIZE_ARRAY_TYPE_OES: count = 1; break;
         case GL_POINT_SIZE_MAX: count=1; break;
         case GL_POINT_SIZE_MIN: count=1; break;
         case GL_POINT_SMOOTH: count=1; break;
@@ -335,7 +352,9 @@ GLES2_CB(glGetPointerv)
     case GL_VERTEX_ARRAY_POINTER:
         res = ctx->arrays[gles1_num_glVertexPointer].tptr;
         break;
-
+    case GL_POINT_SIZE_ARRAY_POINTER_OES:
+        res = ctx->arrays[gles1_num_glPointSizePointer].tptr;
+        break;
     default:
         GLES2_PRINT("ERROR: Unknown pname 0x%x in glGetPointerv!\n", pname);
         break;
@@ -364,7 +383,9 @@ GLES2_CB(glEnableClientState)
     case GL_VERTEX_ARRAY:
         ctx->arrays[gles1_num_glVertexPointer].enabled = 1;
         break;
-
+    case GL_POINT_SIZE_ARRAY_OES:
+        ctx->arrays[gles1_num_glPointSizePointer].enabled = 1;
+        break;
     default:
         GLES2_PRINT("ERROR: Unknown array 0x%x in glEnableClientState!\n", array);
         break;
@@ -392,7 +413,9 @@ GLES2_CB(glDisableClientState)
     case GL_VERTEX_ARRAY:
         ctx->arrays[gles1_num_glVertexPointer].enabled = 0;
         break;
-
+    case GL_POINT_SIZE_ARRAY_OES:
+        ctx->arrays[gles1_num_glPointSizePointer].enabled = 0;
+        break;
     default:
         GLES2_PRINT("ERROR: Unknown array 0x%x in glDisableClientState!\n", array);
         break;
@@ -1424,5 +1447,24 @@ GLES2_CB(glVertexPointer)
     va->stride = stride;
     va->tptr = pointerp;
     va->apply = gles1_apply_glVertexPointer;
+    va->enabled = 1;
+}
+
+GLES2_CB(glPointSizePointerOES)
+{
+    GLES2_ARG(TGLenum, type);
+    GLES2_ARG(TGLsizei, stride);
+    GLES2_ARG(Tptr, pointerp);
+    GLES2_BARRIER_ARG_NORET;
+    
+    gles2_Context * ctx = c->context[context_index];
+    GLES2_PRINT("Array glPointSizePointerOES at 0x%x\n", pointerp);
+    
+    gles2_Array *va = ctx->arrays + gles1_num_glPointSizePointer;
+    va->size = gles1_size_glPointSizePointer;
+    va->type = type;
+    va->stride = stride;
+    va->tptr = pointerp;
+    va->apply = gles1_apply_glPointSizePointer;
     va->enabled = 1;
 }

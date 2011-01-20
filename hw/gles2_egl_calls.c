@@ -547,7 +547,7 @@ GLES2_CB(eglMakeCurrent)
     if (ctx && !ctx->arrays) {
         if (ctx->client_type == EGL_OPENGL_ES_API) {
             if(ctx->client_version == 1) {
-                ctx->narrays = 5;
+                ctx->narrays = 6;
                 ctx->arrays = malloc(ctx->narrays * sizeof(*ctx->arrays));
             }
             else if(ctx->client_version == 2) {
