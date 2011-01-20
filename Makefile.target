@@ -353,15 +353,14 @@ LIBS+=-ldl
 endif
 
 gles2.o: gles2.c gles2.h
-gles2_calls.o: gles2_calls.c gles2.h gles2_calls.h
 gles2_egl.o: gles2_egl.c gles2.h
 gles2_es11.o: gles2_es11.c gles2.h
 gles2_es20.o: gles2_es20.c gles2.h
-gles2_kernel_calls.o: gles2_kernel_calls.c gles2.h gles2_calls.c
-gles2_egl_calls.o: gles2_egl_calls.c gles2.h gles2_calls.c
-gles2_es11_calls.o: gles2_es11_calls.c gles2.h gles2_calls.c
-gles2_es20_calls.o: gles2_es20_calls.c gles2.h gles2_calls.c
-obj-arm-y += gles2.o gles2_calls.o gles2_egl.o gles2_es11.o gles2_es20.o gles2_kernel_calls.o  gles2_egl_calls.o gles2_es11_calls.o gles2_es20_calls.o
+gles2_kernel_calls.o: gles2_kernel_calls.c gles2.h gles2_calls.h
+gles2_egl_calls.o: gles2_egl_calls.c gles2.h gles2_calls.h
+gles2_es11_calls.o: gles2_es11_calls.c gles2.h gles2_calls.h
+gles2_es20_calls.o: gles2_es20_calls.c gles2.h gles2_calls.h
+obj-arm-y += gles2.o gles2_egl.o gles2_es11.o gles2_es20.o gles2_kernel_calls.o  gles2_egl_calls.o gles2_es11_calls.o gles2_es20_calls.o
 
 endif # CONFIG_GLES2
 endif # TARGET_BASE_ARCH==arm

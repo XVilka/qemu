@@ -27,10 +27,10 @@
 // Defines shorthands for handling types.
 #define GLES2_TYPE(TYPE, SIZE) \
     typedef GLES2_HTYPE_##SIZE TYPE; \
-    inline void gles2_ret_##TYPE(gles2_State *s, TYPE value); \
-    inline void gles2_put_##TYPE(gles2_State *s, target_ulong va, TYPE value); \
-    inline TYPE gles2_get_##TYPE(gles2_State *s, target_ulong va); \
-    inline TYPE gles2_arg_##TYPE(gles2_State *s, gles2_decode_t *d); \
+    static inline void gles2_ret_##TYPE(gles2_State *s, TYPE value); \
+    static inline void gles2_put_##TYPE(gles2_State *s, target_ulong va, TYPE value); \
+    static inline TYPE gles2_get_##TYPE(gles2_State *s, target_ulong va); \
+    static inline TYPE gles2_arg_##TYPE(gles2_State *s, gles2_decode_t *d); \
 
 // Bunch of expansions of previous macro to ease things up.
 GLES2_TYPE(Tptr, dword)
@@ -74,4 +74,46 @@ struct gles2_Array
     void (*apply) (struct gles2_Array *va);
     TGLboolean enabled;    // State.
 };
+
+// Defines shorthands for handling types.
+#define GLES2_TYPE_DEF(TYPE, SIZE) \
+    static inline void gles2_ret_##TYPE(gles2_State *s, TYPE value) \
+    { gles2_ret_##SIZE(s, value); } \
+    static inline void gles2_put_##TYPE(gles2_State *s, target_ulong va, TYPE value) \
+    { gles2_put_##SIZE(s, va, value); } \
+    static inline TYPE gles2_get_##TYPE(gles2_State *s, target_ulong va) \
+    { return (TYPE)gles2_get_##SIZE(s, va); } \
+    static inline TYPE gles2_arg_##TYPE(gles2_State *s, gles2_decode_t *d) \
+    { return (TYPE)gles2_arg_##SIZE(s, d); }
+
+// Bunch of expansions of previous macro to ease things up.
+GLES2_TYPE_DEF(Tptr, dword)
+GLES2_TYPE_DEF(TEGLBoolean, dword)
+GLES2_TYPE_DEF(TEGLenum, dword)
+GLES2_TYPE_DEF(TEGLint, dword)
+GLES2_TYPE_DEF(TEGLDisplay, handle)
+GLES2_TYPE_DEF(TEGLConfig, handle)
+GLES2_TYPE_DEF(TEGLContext, handle)
+GLES2_TYPE_DEF(TEGLSurface, handle)
+
+GLES2_TYPE_DEF(TGLclampf, float)
+GLES2_TYPE_DEF(TGLbitfield, dword)
+GLES2_TYPE_DEF(TGLboolean, byte)
+GLES2_TYPE_DEF(TGLint, dword)
+GLES2_TYPE_DEF(TGLuint, dword)
+GLES2_TYPE_DEF(TGLushort, word)
+GLES2_TYPE_DEF(TGLubyte, byte)
+GLES2_TYPE_DEF(TGLenum, dword)
+GLES2_TYPE_DEF(TGLsizei, dword)
+GLES2_TYPE_DEF(TGLfloat, float)
+GLES2_TYPE_DEF(TGLfixed, dword)
+GLES2_TYPE_DEF(TGLclampx, dword)
+
+#define GL_BYTE                           0x1400
+#define GL_UNSIGNED_BYTE                  0x1401
+#define GL_SHORT                          0x1402
+#define GL_UNSIGNED_SHORT                 0x1403
+#define GL_FLOAT                          0x1406
+#define GL_FIXED                          0x140C
+
 #endif // GLES2_CALLS_H__
