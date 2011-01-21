@@ -44,14 +44,8 @@ GLES2_CB(init)
         /* support legacy clients that do not provide ABI id */
         abi = gles2_abi_arm_softfp;
     }
-    if (s->abi == gles2_abi_unknown) {
-        s->abi = abi;
-        GLES2_PRINT("Selected ABI %d\n", s->abi);
-    } else if (s->abi != abi) {
-        fprintf(stderr, "ERROR: trying to change ABI (%d to %d)!\n", s->abi, abi);
-        gles2_ret_dword(s, 0);
-        return;
-    }
+    s->abi = abi;
+    GLES2_PRINT("Selected ABI %d\n", s->abi);
 
     client = malloc(sizeof(*client));
     client->s = s;
