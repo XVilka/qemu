@@ -15,6 +15,7 @@
 #include "qemu-common.h"
 #include "cpu.h"
 #include <pthread.h>
+#define CONFIG_OFFSCREEN 1
 #include "EGL/degl.h"
 #ifdef _WIN32
 #   define RTLD_LAZY  0x01
