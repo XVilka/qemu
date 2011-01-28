@@ -270,21 +270,22 @@ GLES2_CB(eglCreateWindowSurface)
     fsurf->pixmap = 0;
     gles2_surface_update(s, fsurf);
     GLES2_BARRIER_ARG;
+    DEGLDrawable* ddraw=&(fsurf->ddraw);
 
     GLES2_PRINT("Host window creation requested, %dx%d@%d(Bpp=%d) at 0x%x, ID = %d...\n",
-        fsurf->ddraw.width, fsurf->ddraw.height,
-        fsurf->ddraw.depth, fsurf->ddraw.bpp, fsurf->pixelsp, fsurf->id);
+        ddraw->width, ddraw->height,
+        ddraw->depth, ddraw->bpp, fsurf->pixelsp, fsurf->id);
 
-    unsigned nbytes = fsurf->ddraw.width*fsurf->ddraw.height*fsurf->ddraw.bpp;
-    fsurf->ddraw.pixels = malloc(nbytes);
-    fsurf->ddraw.userdata = fsurf;
-    fsurf->ddraw.swap = gles2_eglSwapCallback;
+    unsigned nbytes = ddraw->width*ddraw->height*ddraw->bpp;
+    ddraw->pixels = malloc(nbytes);
+    ddraw->userdata = fsurf;
+    ddraw->swap = gles2_eglSwapCallback;
 
-    if((fsurf->surf = eglCreateOffscreenSurfaceDGLES(dpy, config,
-        (EGLNativeWindowType)&fsurf->ddraw)) == EGL_NO_SURFACE)
+    if((fsurf->surf = eglCreateOffscreenSurfaceDGLES(dpy, config, ddraw))
+        == EGL_NO_SURFACE)
     {
         GLES2_PRINT("\tHost window creation failed!\n");
-        free(fsurf->ddraw.pixels);
+        free(ddraw->pixels);
         free(fsurf);
         GLES2_BARRIER_RET;
         gles2_ret_TEGLSurface(s, 0);
@@ -323,20 +324,23 @@ GLES2_CB(eglCreatePixmapSurface)
     fsurf->pixmap = 1;
     gles2_surface_update(s, fsurf);
     GLES2_BARRIER_ARG;
+    DEGLDrawable* ddraw=&(fsurf->ddraw);
 
     GLES2_PRINT("Host pixmap creation requested, %dx%d@%d(Bpp=%d) at 0x%x, ID = %d...\n",
-        fsurf->ddraw.width, fsurf->ddraw.height,
-        fsurf->ddraw.depth, fsurf->ddraw.bpp, fsurf->pixelsp, fsurf->id);
+        ddraw->width, ddraw->height,
+        ddraw->depth, ddraw->bpp, fsurf->pixelsp, fsurf->id);
 
-    unsigned nbytes = fsurf->ddraw.width*fsurf->ddraw.height*fsurf->ddraw.bpp;
-    fsurf->ddraw.pixels = malloc(nbytes);
-    fsurf->ddraw.userdata = fsurf;
-    fsurf->ddraw.swap = gles2_eglSwapCallback;
+    unsigned nbytes = ddraw->width*ddraw->height*ddraw->bpp;
+    ddraw->pixels = malloc(nbytes);
+    ddraw->userdata = fsurf;
+    ddraw->swap = gles2_eglSwapCallback;
 
-    if((fsurf->surf = eglCreateOffscreenSurfaceDGLES(dpy, config,
-        (EGLNativeWindowType)&fsurf->ddraw)) == EGL_NO_SURFACE) {
+
+    if((fsurf->surf = eglCreateOffscreenSurfaceDGLES(dpy, config, ddraw))
+        == EGL_NO_SURFACE)
+    {
         GLES2_PRINT("\tHost pixmap creation failed!\n");
-        free(fsurf->ddraw.pixels);
+        free(ddraw->pixels);
         free(fsurf);
         GLES2_BARRIER_RET;
         gles2_ret_TEGLSurface(s, 0);
