@@ -280,8 +280,8 @@ GLES2_CB(eglCreateWindowSurface)
     fsurf->ddraw.userdata = fsurf;
     fsurf->ddraw.swap = gles2_eglSwapCallback;
 
-    if((fsurf->surf = eglCreateWindowSurface(dpy, config,
-        (EGLNativeWindowType)&fsurf->ddraw, NULL)) == EGL_NO_SURFACE)
+    if((fsurf->surf = eglCreateOffscreenSurfaceDGLES(dpy, config,
+        (EGLNativeWindowType)&fsurf->ddraw)) == EGL_NO_SURFACE)
     {
         GLES2_PRINT("\tHost window creation failed!\n");
         free(fsurf->ddraw.pixels);
@@ -333,8 +333,8 @@ GLES2_CB(eglCreatePixmapSurface)
     fsurf->ddraw.userdata = fsurf;
     fsurf->ddraw.swap = gles2_eglSwapCallback;
 
-    if((fsurf->surf = eglCreatePixmapSurface(dpy, config,
-        (EGLNativeWindowType)&fsurf->ddraw, NULL)) == EGL_NO_SURFACE) {
+    if((fsurf->surf = eglCreateOffscreenSurfaceDGLES(dpy, config,
+        (EGLNativeWindowType)&fsurf->ddraw)) == EGL_NO_SURFACE) {
         GLES2_PRINT("\tHost pixmap creation failed!\n");
         free(fsurf->ddraw.pixels);
         free(fsurf);
