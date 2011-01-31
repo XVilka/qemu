@@ -62,6 +62,7 @@ static NSWindow *normalWindow;
 static id cocoaView;
 static DisplayChangeListener *dcl;
 static int last_vm_running;
+static int caption_update_requested;
 
 static int gArgc;
 static char **gArgv;
@@ -932,6 +933,7 @@ static int cocoa_keycode_to_qemu(int keycode)
     if (gles2_backend && !strncmp(gles2_backend, "osmesa", 6)) {
         [caption appendString:@" (softGL)"];
     }
+    caption_update_requested = 0;
 #endif
     if (isShuttingDownGuest) {
         [caption appendString:@" [Shutting down]"];
@@ -1314,6 +1316,13 @@ static void cocoa_update(DisplayState *ds, int x, int y, int w, int h)
     [cocoaView setNeedsDisplayInRect:rect];
 }
 
+#ifdef CONFIG_GLES2
+static void cocoa_updatecaption(void)
+{
+    caption_update_requested = 1;
+}
+#endif
+
 static void cocoa_resize(DisplayState *ds)
 {
     COCOA_DEBUG("");
@@ -1330,7 +1339,11 @@ static void cocoa_refresh(DisplayState *ds)
 {
     COCOA_DEBUG("");
 
-    if (last_vm_running != vm_running) {
+    if (last_vm_running != vm_running
+#ifdef CONFIG_GLES2
+        || caption_update_requested
+#endif
+        ) {
         last_vm_running = vm_running;
         [cocoaView updateCaption];
     }
@@ -1394,6 +1407,10 @@ void cocoa_display_init(DisplayState *ds, int full_screen)
     dcl->dpy_update = cocoa_update;
     dcl->dpy_resize = cocoa_resize;
     dcl->dpy_refresh = cocoa_refresh;
+#ifdef CONFIG_GLES2
+    dcl->dpy_updatecaption = cocoa_updatecaption;
+    caption_update_requested = 0;
+#endif
 #ifdef CONFIG_SKINNING
     dcl->dpy_enablezoom = cocoa_enablezoom;
     dcl->dpy_getresolution = cocoa_getresolution;

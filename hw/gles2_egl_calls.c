@@ -9,6 +9,7 @@
  * with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "console.h"
 #include "gles2_calls.h"
 #include "GLES2/gl2.h"
 
@@ -107,6 +108,8 @@ GLES2_CB(eglGetDisplay)
 
     GLES2_BARRIER_RET;
     gles2_ret_TEGLDisplay(s, gles2_handle_create(s, dpy));
+
+    dpy_updatecaption(get_displaystate());
 }
 
 GLES2_CB(eglInitialize)

@@ -62,7 +62,9 @@ static uint8_t allocator;
 static SDL_PixelFormat host_format;
 static int scaling_active = 0;
 static int mouseX = 0, mouseY = 0;
-
+#ifdef CONFIG_GLES2
+static int caption_update_requested;
+#endif
 #ifdef CONFIG_SKINNING
 void skin_toggle_full_screen(DisplayState *ds);
 static int host_display_width;
@@ -504,6 +506,7 @@ static void sdl_update_caption(void)
         snprintf(extended_status, 128, " (softGL)%s", status);
         status = extended_status;
     }
+    caption_update_requested = 0;
 #endif
 
     if (qemu_name) {
@@ -516,6 +519,13 @@ static void sdl_update_caption(void)
 
     SDL_WM_SetCaption(win_title, icon_title);
 }
+
+#ifdef CONFIG_GLES2
+static void sdl_update_caption_request(void)
+{
+    caption_update_requested = 1;
+}
+#endif
 
 static void sdl_hide_cursor(void)
 {
@@ -643,7 +653,11 @@ static void sdl_refresh(DisplayState *ds)
     int mod_state;
     int buttonstate = SDL_GetMouseState(NULL, NULL);
 
-    if (last_vm_running != vm_running) {
+    if (last_vm_running != vm_running
+#ifdef CONFIG_GLES2
+        || caption_update_requested
+#endif
+        ) {
         last_vm_running = vm_running;
         sdl_update_caption();
     }
@@ -950,6 +964,10 @@ void sdl_display_init(DisplayState *ds, int full_screen, int no_frame)
     dcl->dpy_refresh = sdl_refresh;
     dcl->dpy_setdata = sdl_setdata;
     dcl->dpy_fill = sdl_fill;
+#ifdef CONFIG_GLES2
+    dcl->dpy_updatecaption = sdl_update_caption_request;
+    caption_update_requested = 0;
+#endif
 #ifdef CONFIG_SKINNING
     dcl->dpy_enablezoom = sdl_scale_window;
     dcl->dpy_getresolution = sdl_getresolution;
