@@ -2307,7 +2307,7 @@ struct n900_s {
 };
 
 #ifdef CONFIG_SKINNING
-#include "skin_switchstate.h"
+#include "skin/skin_switchstate.h"
 static int n900_switchstate_callback(void *opaque, const int keycode)
 {
     struct n900_s *s = opaque;

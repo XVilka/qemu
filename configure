@@ -2791,6 +2791,7 @@ if test "$gles2" = "yes" ; then
 fi
 if test "$skinning" = "yes" ; then
   echo "CONFIG_SKINNING=y" >>$config_host_mak
+  libs_softmmu="-lexpat $libs_softmmu"
 fi
 if test "$libpng" = "yes" ; then
   echo "CONFIG_PNG=yes" >> $config_host_mak

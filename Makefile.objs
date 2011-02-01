@@ -139,6 +139,9 @@ ui-obj-y += vnc-jobs-sync.o
 endif
 common-obj-y += $(addprefix ui/, $(ui-obj-y))
 
+skin-obj-$(CONFIG_SKINNING) += skinning.o skin_config.o skin_image.o skin_button.o skin_monitor.o
+common-obj-y += $(addprefix skin/, $(skin-obj-y))
+
 common-obj-y += iov.o acl.o
 common-obj-$(CONFIG_THREAD) += qemu-thread.o
 common-obj-$(CONFIG_IOTHREAD) += compatfd.o
