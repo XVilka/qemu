@@ -593,8 +593,10 @@ static void twl4030_4a_write(TWL4030NodeState *s, uint8_t addr, uint8_t value)
 
         case 0x00: /* CTRL1 */
         case 0x01: /* CTRL2 */
-            s->reg_data[addr] = value;
-            break;
+        case 0x02: /* RTSELECT_LSB */
+        case 0x03: /* RTSELECT_MSB */
+        case 0x04: /* RTAVERAGE_LSB */
+        case 0x05: /* RTAVERAGE_MSB */
         case 0x06: /* SW1SELECT_LSB */
         case 0x07: /* SW1SELECT_MSB */
         case 0x08: /* SW1AVERAGE_LSB */
@@ -603,6 +605,10 @@ static void twl4030_4a_write(TWL4030NodeState *s, uint8_t addr, uint8_t value)
         case 0x0b: /* SW2SELECT_MSB */
         case 0x0c: /* SW2AVERAGE_LSB */
         case 0x0d: /* SW2AVERAGE_MSB */
+        case 0x0e: /* BCI_USBAVERAGE */
+        case 0x0f: /* ACQUISITION */
+        case 0x10: /* USBREF_LSB */
+        case 0x11: /* USBREF_MSB */
             s->reg_data[addr] = value;
             break;
         case 0x12: /* CTRL_SW1 */
