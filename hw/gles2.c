@@ -487,6 +487,7 @@ extern CPUWriteMemoryFunc *gles2_es20_writefn[];
 void *gles2_init(CPUState *env)
 {
     setenv("DGLES2_FRONTEND", "offscreen", 1);
+    setenv("DGLES2_NO_ALPHA", "1", 1);
 
     gles2_State *s = qemu_mallocz(sizeof(*s));
     unsigned i;
