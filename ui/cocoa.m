@@ -62,7 +62,10 @@ static NSWindow *normalWindow;
 static id cocoaView;
 static DisplayChangeListener *dcl;
 static int last_vm_running;
+
+#ifdef CONFIG_GLES2
 static int caption_update_requested;
+#endif
 
 static int gArgc;
 static char **gArgv;
