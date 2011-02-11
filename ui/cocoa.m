@@ -298,9 +298,6 @@ static int cocoa_keycode_to_qemu(int keycode)
 - (BOOL) isFullscreen;
 - (void) enableZooming:(int)w height:(int)h displayState:(DisplayState *)ds;
 #endif
-#ifndef QEMU_COCOA_THREADED
-- (BOOL) handleEvent:(NSEvent *)event;
-#endif
 @end
 
 @implementation QemuCocoaView
@@ -826,60 +823,6 @@ static int cocoa_keycode_to_qemu(int keycode)
     }
 }
 
-#ifndef QEMU_COCOA_THREADED
-- (BOOL) handleEvent:(NSEvent *)event
-{
-    switch ([event type]) {
-        case NSFlagsChanged:
-            [self flagsChanged:event];
-            break;
-        case NSKeyDown:
-            [self keyDown:event];
-            break;
-        case NSKeyUp:
-            [self keyUp:event];
-            break;
-        case NSMouseMoved:
-            [self mouseMoved:event];
-            break;
-        case NSLeftMouseDown:
-            [self mouseDown:event];
-            break;
-        case NSRightMouseDown:
-            [self rightMouseDown:event];
-            break;
-        case NSOtherMouseDown:
-            [self otherMouseDown:event];
-            break;
-        case NSLeftMouseDragged:
-            [self mouseDragged:event];
-            break;
-        case NSRightMouseDragged:
-            [self rightMouseDragged:event];
-            break;
-        case NSOtherMouseDragged:
-            [self otherMouseDragged:event];
-            break;
-        case NSLeftMouseUp:
-            [self mouseUp:event];
-            break;
-        case NSRightMouseUp:
-            [self rightMouseUp:event];
-            break;
-        case NSOtherMouseUp:
-            [self otherMouseUp:event];
-            break;
-        case NSScrollWheel:
-            [self scrollWheel:event];
-            break;
-        default:
-            break;
-    }
-    [NSApp sendEvent:event];
-    return NO;
-}
-#endif
-
 - (void) qemuReportMouseEvent:(NSEvent *)event position:(NSPoint)p buttons:(int)buttons
 {
     if (isTabletEnabled) {
@@ -1368,7 +1311,7 @@ static void cocoa_refresh(DisplayState *ds)
         event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:distantPast
                                       inMode: NSDefaultRunLoopMode dequeue:YES];
         if (event != nil) {
-            [cocoaView handleEvent:event];
+            [NSApp sendEvent:event];
         }
     } while(event != nil);
 #endif
