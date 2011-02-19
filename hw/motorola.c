@@ -54,8 +54,8 @@
 #endif
 
 #define MILESTONE_SDRAM_SIZE (256 * 1024 * 1024)
-#define MILESTONE_ONENAND_CS 0
-#define MILESTONE_ONENAND_BUFSIZE (0xc000 << 1)
+#define MILESTONE_NAND_CS 0
+#define MILESTONE_NAND_BUFSIZE (0xc000 << 1)
 #define MILESTONE_SMC_CS 1
 
 #define MILESTONE_ONENAND_GPIO       65
@@ -997,10 +997,9 @@ static void milestone_init(ram_addr_t ram_size,
     qdev_prop_set_uint8(s->motlcd, "milestone", 1);
     qdev_init_nofail(s->motlcd);
 
-    s->nand = onenand_create(NAND_MFR_SAMSUNG, 0x40, 0x121, 1,
-                             qdev_get_gpio_in(s->cpu->gpio, MILESTONE_ONENAND_GPIO),
-                             dmtd ? dmtd->bdrv : NULL);
-	omap_gpmc_attach(s->cpu->gpmc, 0, s->nand, 0, 0);
+    s->nand = nand_init(NAND_MFR_HYNIX, 0xba, dmtd ? dmtd->bdrv : NULL);
+	nand_setpins(s->nand, 0, 0, 0, 1, 0); /* no write-protect */
+	omap_gpmc_attach(s->cpu->gpmc, MILESTONE_NAND_CS, s->nand, 0, 2);
 
     if (dsd) {
         omap3_mmc_attach(s->cpu->omap3_mmc[1], dsd->bdrv, 0, 1);

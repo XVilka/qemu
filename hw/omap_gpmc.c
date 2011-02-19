@@ -419,7 +419,8 @@ static void omap_gpmc_cs_map(struct omap_gpmc_s *s, int cs)
     uint32_t mask = (f->config[6] >> 8) & 0xf;
     uint32_t base = f->config[6] & 0x3f;
     uint32_t size;
-    /* TODO: check for overlapping regions and report access errors */
+
+	/* TODO: check for overlapping regions and report access errors */
     if (mask != 0x8 && mask != 0xc && mask != 0xe && mask != 0xf
          && !(s->accept_256 && !mask)) {
         fprintf(stderr, "%s: invalid chip-select mask address (0x%x)\n",
@@ -508,7 +509,7 @@ void omap_gpmc_reset(struct omap_gpmc_s *s)
         if (i == 0) {
             s->cs_file[i].config[0] &= 0x00433e00;
             s->cs_file[i].config[6] |= 1 << 6; /* CSVALID */
-            omap_gpmc_cs_map(s, i);
+			omap_gpmc_cs_map(s, i);
         } else {
             /* FIXME: again, this should force device size to 16bit but
              * here instead we keep what omap_gpmc_attach has done */
@@ -757,7 +758,7 @@ static void omap_gpmc_write32(void *opaque, target_phys_addr_t addr,
             if ((f->config[6] ^ value) & 0xf7f) {
                 omap_gpmc_cs_unmap(s, cs);
                 f->config[6] = value & 0x00000f7f;
-                omap_gpmc_cs_map(s, cs);
+				omap_gpmc_cs_map(s, cs);
             }
             break;
         case 0x7c:	/* GPMC_NAND_COMMAND */
@@ -1065,6 +1066,6 @@ void omap_gpmc_attach(struct omap_gpmc_s *s, int cs, DeviceState *dev,
             if (nand_getbuswidth(f->dev) == 16)
                 f->config[0] |= 1 << 12;
         }
-        omap_gpmc_cs_map(s, cs);
+		omap_gpmc_cs_map(s, cs);
     }
 }

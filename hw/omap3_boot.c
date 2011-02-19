@@ -27,6 +27,7 @@
 #include "arm-misc.h"
 #include "omap.h"
 #include "sysemu.h"
+#include "loader.h"
 #include "qemu-char.h"
 #include "flash.h"
 #include "blockdev.h"
@@ -39,6 +40,8 @@
 #else
 #define TRACE(...)
 #endif
+
+#define BOOTROM_FILENAME "bootrom.bin"
 
 /* list of supported NAND devices according to the OMAP34xx TRM */
 static const struct {
@@ -871,25 +874,84 @@ static int omap3_onenand_boot(struct omap_mpu_state_s *s)
     return result;
 }
 
+void omap3_boot_rom_allocate(struct omap_mpu_state_s *s, int high)
+{
+	char* filename;
+	const char* bootrom_name;
+	uint8_t *boot_rom = NULL;
+
+	int bootrom_size, ret, i;
+	
+	bootrom_name = bios_name;
+	if (bootrom_name == NULL) bootrom_name = BOOTROM_FILENAME;
+	
+	filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bootrom_name);
+	if (filename) {
+		bootrom_size = get_image_size(filename);
+	} else {
+		bootrom_size = -1;
+	}
+	if (bootrom_size <= 0 || (bootrom_size % 32768) != 0) {
+		fprintf(stderr, "qemu: could not load ARM Boot ROM '%s'\n", bootrom_name);
+	exit(1);
+	}
+	
+	if (high == 1) {
+		s->bootrom_base = qemu_ram_alloc(NULL, "omap3_boot_rom", bootrom_size);
+		ret = rom_add_file_fixed(bootrom_name, OMAP3_Q1_BASE + 0x14000, -1);
+		if (ret != 0) {
+			fprintf(stderr, "qemu: could not load ARM Boot ROM '%s'\n", bootrom_name);
+			exit(1);
+		}
+		cpu_register_physical_memory(OMAP3_Q1_BASE + 0x14000,
+													bootrom_size,
+													s->bootrom_base | IO_MEM_ROM);
+		printf("HIGH BOOTROM: allocated\n");
+	} else {
+		boot_rom = qemu_mallocz(bootrom_size);
+		rom_copy(boot_rom, OMAP3_Q1_BASE + 0x14000, bootrom_size);
+		//s->bootrom_base = qemu_ram_alloc(NULL, "omap3_low_rom", bootrom_size);
+		//cpu_register_physical_memory(OMAP_CS0_BASE + 0x14000, bootrom_size, s->bootrom_base | IO_MEM_ROM);
+		cpu_physical_memory_write_rom(OMAP_CS0_BASE + 0x14000, boot_rom, bootrom_size);
+		cpu_physical_memory_read(OMAP_CS0_BASE + 0x14000, boot_rom, bootrom_size);
+		for ( i = 0; i < 2048; i++ ) printf("%2x ", boot_rom[i]);
+		printf("\n\n");
+		free(boot_rom);
+		printf("LOW BOOTROM: allocated\n");
+	}
+	cpu_physical_memory_write(OMAP3_SRAM_BASE + 0xffc8,
+												omap3_sram_vectors,
+												sizeof(omap3_sram_vectors));
+}
+
 void omap3_boot_rom_init(struct omap_mpu_state_s *s)
 {
-    const uint8_t rom_version[4] = { 0x00, 0x14, 0x00, 0x00 }; /* v. 14.00 */
+	const uint8_t rom_version[4] = { 0x00, 0x14, 0x00, 0x00 }; /* v. 14.00 */
+
+	int boot_rom_from_file = 0;
+
+	if (bios_name != NULL) boot_rom_from_file = 1;
 
     if (!s->bootrom_base) {
-        s->bootrom_base = qemu_ram_alloc(NULL, "omap3_boot_rom",
-                                         OMAP3XXX_BOOTROM_SIZE);
-        cpu_register_physical_memory(OMAP3_Q1_BASE + 0x14000,
-                                     OMAP3XXX_BOOTROM_SIZE,
-                                     s->bootrom_base | IO_MEM_ROM);
-        cpu_physical_memory_write_rom(OMAP3_Q1_BASE + 0x14000,
-                                      omap3_boot_rom,
-                                      sizeof(omap3_boot_rom));
-        cpu_physical_memory_write_rom(OMAP3_Q1_BASE + 0x1bffc,
-                                      rom_version,
-                                      sizeof(rom_version));
-        cpu_physical_memory_write(OMAP3_SRAM_BASE + 0xffc8,
-                                  omap3_sram_vectors,
-                                  sizeof(omap3_sram_vectors));
+        if (!boot_rom_from_file) {
+			s->bootrom_base = qemu_ram_alloc(NULL, "omap3_boot_rom",
+			                                        OMAP3XXX_BOOTROM_SIZE);
+			cpu_register_physical_memory(OMAP3_Q1_BASE + 0x14000,
+													OMAP3XXX_BOOTROM_SIZE,
+													s->bootrom_base | IO_MEM_ROM);
+			cpu_physical_memory_write_rom(OMAP3_Q1_BASE + 0x14000,
+													omap3_boot_rom,
+													sizeof(omap3_boot_rom));
+			cpu_physical_memory_write_rom(OMAP3_Q1_BASE + 0x1bffc,
+													rom_version,
+													sizeof(rom_version));
+			cpu_physical_memory_write(OMAP3_SRAM_BASE + 0xffc8,
+													omap3_sram_vectors,
+													sizeof(omap3_sram_vectors));
+		}
+		else {
+			omap3_boot_rom_allocate(s, 1);	
+		}
     }
 }
 

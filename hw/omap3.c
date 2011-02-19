@@ -4048,8 +4048,8 @@ static void omap3_reset(void *opaque)
     }
     omap_synctimer_reset(s->synctimer);
     omap_sdrc_reset(s->sdrc);
-    omap_gpmc_reset(s->gpmc);
-
+	omap_gpmc_reset(s->gpmc);
+	omap3_boot_rom_allocate(s, 0);
     omap3_boot_rom_emu(s);
 }
 
@@ -4109,7 +4109,6 @@ struct omap_mpu_state_s *omap3_mpu_init(int model, int emulate_bootrom,
                                cpu_irq[ARM_PIC_CPU_FIQ],
                                omap_findclk(s, "omap3_mpu_intc_fclk"),
                                omap_findclk(s, "omap3_mpu_intc_iclk"));
-
     for (i = 0; i < 4; i++) {
         drqs[i] = s->irq[omap3_dma_irq_map[i].ih][omap3_dma_irq_map[i].intr];
     }
