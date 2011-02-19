@@ -425,11 +425,17 @@ static void omap_gp_timer_write(void *opaque, target_phys_addr_t addr,
         s->ar = (value >> 1) & 1;
         s->st = (value >> 0) & 1;
         if (s->inout && s->trigger != gpt_trigger_none)
-            fprintf(stderr, "%s: GP timer pin must be an output "
+		{
+            printf("gpt_trigger_none: %d\n", gpt_trigger_none);
+			fprintf(stderr, "%s: GP timer pin must be an output "
                     "for this trigger mode\n", __FUNCTION__);
-        if (!s->inout && s->capture != gpt_capture_none)
-            fprintf(stderr, "%s: GP timer pin must be an input "
+        }
+		if (!s->inout && s->capture != gpt_capture_none)
+		{
+            printf("gpt_capture_none: %d\n", gpt_capture_none);
+			fprintf(stderr, "%s: GP timer pin must be an input "
                     "for this capture mode\n", __FUNCTION__);
+		}
         if (s->trigger == gpt_trigger_none)
             omap_gp_timer_out(s, s->scpwm);
         /* TODO: make sure this doesn't overflow 32-bits */

@@ -66,8 +66,8 @@
 #define MILESTONE_SLIDE_GPIO         71
 #define MILESTONE_PROXIMITY_GPIO     89
 #define MILESTONE_HEADPHONE_EN_GPIO  98
-#define MILESTONE_TSC2005_IRQ_GPIO   100
-#define MILESTONE_TSC2005_RESET_GPIO 104
+#define MILESTONE_ATMEGA324P_IRQ_GPIO   100
+#define MILESTONE_ATMEGA324P_RESET_GPIO 104
 #define MILESTONE_CAMCOVER_GPIO      110
 #define MILESTONE_KBLOCK_GPIO        113
 #define MILESTONE_HEADPHONE_GPIO     177
@@ -1221,7 +1221,7 @@ struct milestone_s {
     void *twl4030;
     DeviceState *nand;
     DeviceState *motlcd;
-    DeviceState *tsc2005;
+    DeviceState *atmega324p;
     DeviceState *bq2415x;
     DeviceState *tpa6130;
 	DeviceState *lis331dlh;
@@ -1461,14 +1461,16 @@ static void milestone_init(ram_addr_t ram_size,
     s->cpu = omap3_mpu_init(omap3430, 1, MILESTONE_SDRAM_SIZE,
                             serial_hds[1], serial_hds[2],
                             serial_hds[0], NULL);
+
+	/* Initialize LCD Panel */
     omap_lcd_panel_attach(s->cpu->dss);
 
-    s->tsc2005 = spi_create_device(omap_mcspi_bus(s->cpu->mcspi, 0),
-                                   "tsc2005", 0);
-    qdev_connect_gpio_out(s->tsc2005, 0,
+    s->atmega324p = spi_create_device(omap_mcspi_bus(s->cpu->mcspi, 0),
+                                   "atmega324p", 0);
+    qdev_connect_gpio_out(s->atmega324p, 0,
                           qdev_get_gpio_in(s->cpu->gpio,
-                                           MILESTONE_TSC2005_IRQ_GPIO));
-    tsc2005_set_transform(s->tsc2005, &milestone_pointercal, 600, 1500);
+                                           MILESTONE_ATMEGA324P_IRQ_GPIO));
+    atmega324p_set_transform(s->atmega324p, &milestone_pointercal, 600, 1500);
     cursor_hide = 0; // who wants to use touchscreen without a pointer?
     cursor_allow_grab = 0; // ...and please, don't stop the host cursor
 
@@ -1478,7 +1480,8 @@ static void milestone_init(ram_addr_t ram_size,
     qdev_prop_set_uint8(s->motlcd, "milestone", 1);
     qdev_init_nofail(s->motlcd);
 
-    s->nand = nand_init(NAND_MFR_HYNIX, 0xba, dmtd ? dmtd->bdrv : NULL);
+    /* Initialize NAND */
+	s->nand = nand_init(NAND_MFR_HYNIX, 0xba, dmtd ? dmtd->bdrv : NULL);
 	nand_setpins(s->nand, 0, 0, 0, 1, 0); /* no write-protect */
 	omap_gpmc_attach(s->cpu->gpmc, MILESTONE_NAND_CS, s->nand, 0, 2);
 
@@ -1512,6 +1515,7 @@ static void milestone_init(ram_addr_t ram_size,
     qdev_connect_gpio_out(s->lis331dlh, 1,
                           qdev_get_gpio_in(s->cpu->gpio,
                                            MILESTONE_LIS331DLH_INT2_GPIO));
+	//qdev_connect_gpio_in(s->cpu->gpio, 
     
     int i;
     for (i = 0; i < nb_nics; i++) {

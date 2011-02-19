@@ -21,6 +21,10 @@ void tsc2301_key_event(DeviceState *qdev, int key, int down);
 void tsc2005_set_transform(DeviceState *qdev, MouseTransformInfo *info,
                            int z1_cons, int z2_cons);
 
+/* atmega324p.c */
+void atmega324p_set_transform(DeviceState *qdev, MouseTransformInfo *info,
+							int z1_cons, int z2_cons);
+
 /* stellaris_input.c */
 void stellaris_gamepad_init(int n, qemu_irq *irq, const int *keycode);
 
