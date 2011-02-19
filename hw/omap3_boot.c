@@ -880,7 +880,7 @@ void omap3_boot_rom_allocate(struct omap_mpu_state_s *s, int high)
 	const char* bootrom_name;
 	uint8_t *boot_rom = NULL;
 
-	int bootrom_size, ret, i;
+	int bootrom_size, ret;
 	
 	bootrom_name = bios_name;
 	if (bootrom_name == NULL) bootrom_name = BOOTROM_FILENAME;
@@ -906,18 +906,14 @@ void omap3_boot_rom_allocate(struct omap_mpu_state_s *s, int high)
 		cpu_register_physical_memory(OMAP3_Q1_BASE + 0x14000,
 													bootrom_size,
 													s->bootrom_base | IO_MEM_ROM);
-		printf("HIGH BOOTROM: allocated\n");
 	} else {
 		boot_rom = qemu_mallocz(bootrom_size);
 		rom_copy(boot_rom, OMAP3_Q1_BASE + 0x14000, bootrom_size);
-		//s->bootrom_base = qemu_ram_alloc(NULL, "omap3_low_rom", bootrom_size);
-		//cpu_register_physical_memory(OMAP_CS0_BASE + 0x14000, bootrom_size, s->bootrom_base | IO_MEM_ROM);
+		s->bootrom_base = qemu_ram_alloc(NULL, "omap3_low_rom", bootrom_size);
+		cpu_register_physical_memory(OMAP_CS0_BASE + 0x14000, bootrom_size, s->bootrom_base | IO_MEM_ROM);
 		cpu_physical_memory_write_rom(OMAP_CS0_BASE + 0x14000, boot_rom, bootrom_size);
 		cpu_physical_memory_read(OMAP_CS0_BASE + 0x14000, boot_rom, bootrom_size);
-		for ( i = 0; i < 2048; i++ ) printf("%2x ", boot_rom[i]);
-		printf("\n\n");
 		free(boot_rom);
-		printf("LOW BOOTROM: allocated\n");
 	}
 	cpu_physical_memory_write(OMAP3_SRAM_BASE + 0xffc8,
 												omap3_sram_vectors,
