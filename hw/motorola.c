@@ -1,7 +1,9 @@
 /*
  * Motorola Droid, Milestone phones.
  *
+ * Copyright (C) 2007 Nokia Corporation
  * Copyright (C) Anton Kochkov <anton.kochkov@gmail.com>
+ * Written by Andrzej Zaborowski <andrew@openedhand.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
