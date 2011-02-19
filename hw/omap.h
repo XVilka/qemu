@@ -1142,6 +1142,7 @@ struct omap_mpu_state_s *omap3_mpu_init(int model, int emulate_bootrom,
 /* omap3_boot.c */
 void omap3_boot_rom_allocate(struct omap_mpu_state_s *s, int high);
 void omap3_boot_rom_init(struct omap_mpu_state_s *s);
+void omap3_boot_rom_run(struct omap_mpu_state_s *s);
 void omap3_boot_rom_emu(struct omap_mpu_state_s *s);
 
 # if TARGET_PHYS_ADDR_BITS == 32

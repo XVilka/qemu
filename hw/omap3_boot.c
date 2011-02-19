@@ -955,6 +955,18 @@ void omap3_boot_rom_init(struct omap_mpu_state_s *s)
     }
 }
 
+void omap3_boot_rom_run(struct omap_mpu_state_s *s)
+{
+    /* only run the boot rom if it was initialized earlier */
+    if (!s->bootrom_base) {
+        return;
+    }
+
+	/* move PC to the boot ROM reset vector */
+    s->env->regs[15] = 0x40014000;
+	printf("using omap3_boot_rom_run function\n");
+}
+
 void omap3_boot_rom_emu(struct omap_mpu_state_s *s)
 {
     uint8_t x[4] = {0, 0, 0, 0};

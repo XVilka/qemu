@@ -69,8 +69,8 @@
 #define MILESTONE_CAMCOVER_GPIO      110
 #define MILESTONE_KBLOCK_GPIO        113
 #define MILESTONE_HEADPHONE_GPIO     177
-#define MILESTONE_LIS302DL_INT2_GPIO 180
-#define MILESTONE_LIS302DL_INT1_GPIO 181
+#define MILESTONE_LIS331DLH_INT2_GPIO 180
+#define MILESTONE_LIS331DLH_INT1_GPIO 181
 
 //#define DEBUG_BQ2415X
 //#define DEBUG_TPA6130
@@ -88,6 +88,12 @@
 #else
 #define TRACE_TPA6130(...)
 #endif
+#ifdef DEBUG_LIS331DLH
+#define TRACE_LIS331DLH(fmt, ...) MILESTONE_TRACE(fmt, ##__VA_ARGS__)
+#else
+#define TRACE_LIS331DLH(...)
+#endif
+
 
 /* LCD MIPI DBI-C controller (URAL) */
 struct motlcd_s {
@@ -746,6 +752,468 @@ static I2CSlaveInfo tpa6130_info = {
     .send = tpa6130_tx
 };
 
+typedef struct LIS331DLHState_s {
+    i2c_slave i2c;
+    int firstbyte;
+    uint8_t reg;
+
+    qemu_irq irq[2];
+    int8_t axis_max, axis_step;
+    int noise, dr_test_ack;
+
+    uint8_t ctrl1, ctrl2, ctrl3;
+    uint8_t status;
+    struct {
+        uint8_t cfg, src, ths, dur;
+    } ff_wu[2];
+    struct {
+        uint8_t cfg, src, thsy_x, thsz;
+        uint8_t timelimit, latency, window;
+    } click;
+
+    int32_t x, y, z;
+} LIS331DLHState;
+
+static void lis331dlh_interrupt_update(LIS331DLHState *s)
+{
+#ifdef DEBUG_LIS331DLH
+    static const char *rules[8] = {
+        "GND", "FF_WU_1", "FF_WU_2", "FF_WU_1|2", "DR",
+        "???", "???", "CLICK"
+    };
+#endif
+    int active = (s->ctrl3 & 0x80) ? 0 : 1;
+    int cond, latch;
+    int i;
+    for (i = 0; i < 2; i++) {
+        switch ((s->ctrl3 >> (i * 3)) & 0x07) {
+            case 0:
+                cond = 0;
+                break;
+            case 1:
+                cond = s->ff_wu[0].src & 0x40;
+                latch = s->ff_wu[0].cfg & 0x40;
+                break;
+            case 2:
+                cond = s->ff_wu[1].src & 0x40;
+                latch = s->ff_wu[1].cfg & 0x40;
+                break;
+            case 3:
+                cond = ((s->ff_wu[0].src | s->ff_wu[1].src) & 0x40);
+                latch = ((s->ff_wu[0].cfg | s->ff_wu[1].cfg) & 0x40);
+                break;
+            case 4:
+                cond = (((s->ff_wu[0].src | s->ff_wu[1].src) & 0x3f) &
+                        (((s->ctrl1 & 0x01) ? 0x03 : 0x00) |
+                         ((s->ctrl1 & 0x02) ? 0x0c : 0x00) |
+                         ((s->ctrl1 & 0x04) ? 0x30 : 0x00)));
+                latch = 0;
+                break;
+            case 7:
+                cond = s->click.src & 0x40;
+                latch = s->click.cfg & 0x40;
+                break;
+            default:
+                TRACE_LIS331DLH("unsupported irq config (%d)",
+                               (s->ctrl3 >> (i * 3)) & 0x07);
+                cond = 0;
+                latch = 0;
+                break;
+        }
+        TRACE_LIS331DLH("%s: %s irq%d", rules[(s->ctrl3 >> (i * 3)) & 0x07],
+                       cond ? (latch ? "activate" : "pulse") : "deactivate",
+                       i);
+        qemu_set_irq(s->irq[i], cond ? active : !active);
+        if (cond && !latch) {
+            qemu_set_irq(s->irq[i], !active);
+        }
+    }
+}
+
+static void lis331dlh_trigger(LIS331DLHState *s, int axis, int value)
+{
+    if (value > s->axis_max) value = s->axis_max;
+    if (value < -s->axis_max) value = -s->axis_max;
+    switch (axis) {
+        case 0: s->x = value; break;
+        case 1: s->y = value; break;
+        case 2: s->z = value; break;
+        default: break;
+    }
+    if (s->status & (0x01 << axis)) {
+        s->status |= 0x10 << axis;
+    } else {
+        s->status |= 0x01 << axis;
+    }
+    if ((s->status & 0x07) == 0x07) {
+        s->status |= 0x08;
+    }
+    if ((s->status & 0x70) == 0x70) {
+        s->status |= 0x80;
+    }
+    uint8_t bit = 0x02 << (axis << 1); /* over threshold */
+    s->ff_wu[0].src |= bit;
+    s->ff_wu[1].src |= bit;
+
+    int i = 0;
+    for (; i < 2; i++) {
+        if (s->ff_wu[i].src & 0x3f) {
+            if (s->ff_wu[i].cfg & 0x80) {
+                if ((s->ff_wu[i].cfg & 0x3f) == (s->ff_wu[i].src & 0x3f)) {
+                    s->ff_wu[i].src |= 0x40;
+                }
+            } else {
+                if (s->ff_wu[i].src & s->ff_wu[i].cfg & 0x3f) {
+                    s->ff_wu[i].src |= 0x40;
+                }
+            }
+        }
+        TRACE_LIS331DLH("FF_WU_%d: CFG=0x%02x, SRC=0x%02x",
+                       i, s->ff_wu[i].cfg, s->ff_wu[i].src);
+    }
+
+    lis331dlh_interrupt_update(s);
+}
+
+static void lis331dlh_step(void *opaque, int axis, int high, int activate)
+{
+    TRACE_LIS331DLH("axis=%d, high=%d, activate=%d", axis, high, activate);
+    LIS331DLHState *s = opaque;
+    if (activate) {
+        int v = 0;
+        switch (axis) {
+            case 0: v = s->x + (high ? s->axis_step : -s->axis_step); break;
+            case 1: v = s->y + (high ? s->axis_step : -s->axis_step); break;
+            case 2: v = s->z + (high ? s->axis_step : -s->axis_step); break;
+            default: break;
+        }
+        if (v > s->axis_max) v = -(s->axis_max - s->axis_step);
+        if (v < -s->axis_max) v = s->axis_max - s->axis_step;
+        lis331dlh_trigger(s, axis, v);
+    }
+}
+
+static int lis331dlh_change(DeviceState *dev, const char *target,
+                           const char *arg)
+{
+    LIS331DLHState *s = (LIS331DLHState *)dev;
+    int axis;
+    if (!strcmp(target, "x")) {
+        axis = 0;
+    } else if (!strcmp(target, "y")) {
+        axis = 1;
+    } else if (!strcmp(target, "z")) {
+        axis = 2;
+    } else {
+        return -1;
+    }
+    int value = 0;
+    if (sscanf(arg, "%d", &value) != 1) {
+        return -1;
+    }
+    lis331dlh_trigger(s, axis, value);
+    return 0;
+}
+
+static void lis331dlh_reset(DeviceState *ds)
+{
+    LIS331DLHState *s = FROM_I2C_SLAVE(LIS331DLHState, I2C_SLAVE_FROM_QDEV(ds));
+
+    s->firstbyte = 0;
+    s->reg = 0;
+
+    s->noise = 4;
+    s->dr_test_ack = 0;
+
+    s->ctrl1 = 0x03;
+    s->ctrl2 = 0x00;
+    s->ctrl3 = 0x00;
+    s->status = 0x00;
+
+    memset(s->ff_wu, 0x00, sizeof(s->ff_wu));
+    memset(&s->click, 0x00, sizeof(s->click));
+
+    s->x = 0;
+    s->y = -s->axis_max;
+    s->z = 0;
+
+    lis331dlh_interrupt_update(s);
+}
+
+static void lis331dlh_event(i2c_slave *i2c, enum i2c_event event)
+{
+    LIS331DLHState *s = FROM_I2C_SLAVE(LIS331DLHState, i2c);
+    if (event == I2C_START_SEND)
+        s->firstbyte = 1;
+}
+
+static uint8_t lis331dlh_readcoord(LIS331DLHState *s, int coord)
+{
+    int v;
+
+    switch (coord) {
+        case 0:
+            v = s->x;
+            break;
+        case 1:
+            v = s->y;
+            break;
+        case 2:
+            v = s->z;
+            break;
+        default:
+            hw_error("%s: unknown axis %d", __FUNCTION__, coord);
+            break;
+    }
+    s->status &= ~(0x88 | (0x11 << coord));
+    if (s->ctrl1 & 0x10) {
+        switch (coord) {
+            case 0:
+                v -= s->noise;
+                break;
+            case 1:
+            case 2:
+                v += s->noise;
+                break;
+            default:
+                break;
+        }
+        if (++s->noise == 32) {
+            s->noise = 4;
+        }
+        int dr1 = ((s->ctrl3 & 0x07) == 4);
+        int dr2 = (((s->ctrl3 >> 3) & 0x07) == 4);
+        if (!s->dr_test_ack++) {
+            if (dr1) {
+                qemu_irq_pulse(s->irq[0]);
+            }
+            if (dr2) {
+                qemu_irq_pulse(s->irq[1]);
+            }
+        } else if (s->dr_test_ack == 1 + (dr1 + dr2) * 3) {
+            s->dr_test_ack = 0;
+        }
+    }
+    return (uint8_t)v;
+}
+
+static int lis331dlh_rx(i2c_slave *i2c)
+{
+    LIS331DLHState *s = FROM_I2C_SLAVE(LIS331DLHState, i2c);
+    int value = -1;
+    int n = 0;
+    switch (s->reg & 0x7f) {
+        case 0x00 ... 0x0e:
+        case 0x10 ... 0x1f:
+        case 0x23 ... 0x26:
+        case 0x28:
+        case 0x2a:
+        case 0x2c:
+        case 0x2e ... 0x2f:
+        case 0x3a:
+            value = 0;
+            TRACE_LIS331DLH("reg 0x%02x = 0x%02x (unused/reserved reg)",
+                           s->reg & 0x7f, value);
+            break;
+        case 0x0f:
+            value = 0x3b;
+            TRACE_LIS331DLH("WHOAMI = 0x%02x", value);
+            break;
+        case 0x20:
+            value = s->ctrl1;
+            TRACE_LIS331DLH("CTRL1 = 0x%02x", value);
+            break;
+        case 0x21:
+            value = s->ctrl2;
+            TRACE_LIS331DLH("CTRL2 = 0x%02x", value);
+            break;
+        case 0x22:
+            value = s->ctrl3;
+            TRACE_LIS331DLH("CTRL3 = 0x%02x", value);
+            break;
+        case 0x27:
+            value = s->status;
+            TRACE_LIS331DLH("STATUS = 0x%02x", value);
+            break;
+        case 0x29:
+            value = lis331dlh_readcoord(s, 0);
+            TRACE_LIS331DLH("X = 0x%02x", value);
+            break;
+        case 0x2b:
+            value = lis331dlh_readcoord(s, 1);
+            TRACE_LIS331DLH("Y = 0x%02x", value);
+            break;
+        case 0x2d:
+            value = lis331dlh_readcoord(s, 2);
+            TRACE_LIS331DLH("Z = 0x%02x", value);
+            break;
+        case 0x34: n++;
+        case 0x30:
+            value = s->ff_wu[n].cfg;
+            TRACE_LIS331DLH("FF_WU%d.CFG = 0x%02x", n + 1, value);
+            break;
+        case 0x35: n++;
+        case 0x31:
+            value = s->ff_wu[n].src;
+            TRACE_LIS331DLH("FF_WU%d.SRC = 0x%02x", n + 1, value);
+            s->ff_wu[n].src = 0; //&= ~0x40;
+            lis331dlh_interrupt_update(s);
+            break;
+        case 0x36: n++;
+        case 0x32:
+            value = s->ff_wu[n].ths;
+            TRACE_LIS331DLH("FF_WU%d.THS = 0x%02x", n + 1, value);
+            break;
+        case 0x37: n++;
+        case 0x33:
+            value = s->ff_wu[n].dur;
+            TRACE_LIS331DLH("FF_WU%d.DUR = 0x%02x", n + 1, value);
+            break;
+        case 0x38:
+            value = s->click.cfg;
+            TRACE_LIS331DLH("CLICK_CFG = 0x%02x", value);
+            break;
+        case 0x39:
+            value = s->click.src;
+            TRACE_LIS331DLH("CLICK_SRC = 0x%02x", value);
+            s->click.src &= ~0x40;
+            lis331dlh_interrupt_update(s);
+            break;
+        case 0x3b:
+            value = s->click.thsy_x;
+            TRACE_LIS331DLH("CLICK_THSY_X = 0x%02x", value);
+            break;
+        case 0x3c:
+            value = s->click.thsz;
+            TRACE_LIS331DLH("CLICK_THSZ = 0x%02x", value);
+            break;
+        case 0x3d:
+            value = s->click.timelimit;
+            TRACE_LIS331DLH("CLICK_TIMELIMIT = 0x%02x", value);
+            break;
+        case 0x3e:
+            value = s->click.latency;
+            TRACE_LIS331DLH("CLICK_LATENCY = 0x%02x", value);
+            break;
+        case 0x3f:
+            value = s->click.window;
+            TRACE_LIS331DLH("CLICK_WINDOW = 0x%02x", value);
+            break;
+        default:
+            hw_error("%s: unknown register 0x%02x", __FUNCTION__,
+                     s->reg & 0x7f);
+            value = 0;
+            break;
+    }
+    if (s->reg & 0x80) { /* auto-increment? */
+        s->reg = (s->reg + 1) | 0x80;
+    }
+    return value;
+}
+
+static int lis331dlh_tx(i2c_slave *i2c, uint8_t data)
+{
+    LIS331DLHState *s = FROM_I2C_SLAVE(LIS331DLHState, i2c);
+    if (s->firstbyte) {
+        s->reg = data;
+        s->firstbyte = 0;
+    } else {
+        int n = 0;
+        switch (s->reg & 0x7f) {
+            case 0x20:
+                TRACE_LIS331DLH("CTRL1 = 0x%02x", data);
+                s->ctrl1 = data;
+                break;
+            case 0x21:
+                TRACE_LIS331DLH("CTRL2 = 0x%02x", data);
+                s->ctrl2 = data;
+                break;
+            case 0x22:
+                TRACE_LIS331DLH("CTRL3 = 0x%02x", data);
+                s->ctrl3 = data;
+                lis331dlh_interrupt_update(s);
+                break;
+            case 0x34: n++;
+            case 0x30:
+                TRACE_LIS331DLH("FF_WU%d.CFG = 0x%02x", n + 1, data);
+                s->ff_wu[n].cfg = data;
+                break;
+            case 0x36: n++;
+            case 0x32:
+                TRACE_LIS331DLH("FF_WU%d.THS = 0x%02x", n + 1, data);
+                s->ff_wu[n].ths = data;
+                break;
+            case 0x37: n++;
+            case 0x33:
+                TRACE_LIS331DLH("FF_WU%d.DUR = 0x%02x", n + 1, data);
+                s->ff_wu[n].dur = data;
+                break;
+            case 0x38:
+                TRACE_LIS331DLH("CLICK_CFG = 0x%02x", data);
+                s->click.cfg = data;
+                break;
+            case 0x39:
+                TRACE_LIS331DLH("CLICK_SRC = 0x%02x", data);
+                s->click.src = data;
+                break;
+            case 0x3b:
+                TRACE_LIS331DLH("CLICK_THSY_X = 0x%02x", data);
+                s->click.thsy_x = data;
+                break;
+            case 0x3c:
+                TRACE_LIS331DLH("CLICK_THSZ = 0x%02x", data);
+                s->click.thsz = data;
+                break;
+            case 0x3d:
+                TRACE_LIS331DLH("CLICK_TIMELIMIT = 0x%02x", data);
+                s->click.timelimit = data;
+                break;
+            case 0x3e:
+                TRACE_LIS331DLH("CLICK_LATENCY = 0x%02x", data);
+                s->click.latency = data;
+                break;
+            case 0x3f:
+                TRACE_LIS331DLH("CLICK_WINDOW = 0x%02x", data);
+                s->click.window = data;
+                break;
+            default:
+                hw_error("%s: unknown register 0x%02x (value 0x%02x)",
+                         __FUNCTION__, s->reg & 0x7f, data);
+                break;
+        }
+        if (s->reg & 0x80) { /* auto-increment? */
+            s->reg = (s->reg + 1) | 0x80;
+        }
+    }
+    return 1;
+}
+
+static int lis331dlh_init(i2c_slave *i2c)
+{
+    LIS331DLHState *s = FROM_I2C_SLAVE(LIS331DLHState, i2c);
+    s->axis_max = 58;
+    s->axis_step = s->axis_max;// / 2;
+    qdev_init_gpio_out(&i2c->qdev, s->irq, 2);
+    return 0;
+}
+
+static I2CSlaveInfo lis331dlh_info = {
+    .qdev.name = "lis331dlh",
+    .qdev.size = sizeof(LIS331DLHState),
+    .qdev.reset = lis331dlh_reset,
+    .qdev.change = lis331dlh_change,
+    .qdev.props = (Property[]) {
+        DEFINE_PROP_INT32("x", LIS331DLHState, x, 0),
+        DEFINE_PROP_INT32("y", LIS331DLHState, y, 0),
+        DEFINE_PROP_INT32("z", LIS331DLHState, z, 0),
+        DEFINE_PROP_END_OF_LIST(),
+    },
+    .init = lis331dlh_init,
+    .event = lis331dlh_event,
+    .recv = lis331dlh_rx,
+    .send = lis331dlh_tx
+};
+
 struct milestone_s {
     struct omap_mpu_state_s *cpu;
     void *twl4030;
@@ -754,6 +1222,7 @@ struct milestone_s {
     DeviceState *tsc2005;
     DeviceState *bq2415x;
     DeviceState *tpa6130;
+	DeviceState *lis331dlh;
     DeviceState *smc;
 #ifdef CONFIG_GLES2
     void *gles2;
@@ -851,6 +1320,16 @@ static void milestone_key_handler(void *opaque, int keycode)
                                  !s->headphone_connected);
                 }
                 break;
+			case 0x4f ... 0x50: /* kp1,2 */
+                lis331dlh_step(s->lis331dlh, 0, keycode - 0x4f, !release);
+                break;
+            case 0x4b ... 0x4c: /* kp4,5 */
+                lis331dlh_step(s->lis331dlh, 1, keycode - 0x4b, !release);
+                break;
+            case 0x47 ... 0x48: /* kp7,8 */
+                lis331dlh_step(s->lis331dlh, 2, keycode - 0x47, !release);
+                break;
+
             default:
                 break;
         }
@@ -1023,6 +1502,14 @@ static void milestone_init(ram_addr_t ram_size,
     s->tpa6130 = i2c_create_slave(i2c2, "tpa6130", 0x60);
     qdev_connect_gpio_out(s->cpu->gpio, MILESTONE_HEADPHONE_EN_GPIO,
                           qdev_get_gpio_in(s->tpa6130, 0));
+	i2c_bus *i2c3 = omap_i2c_bus(s->cpu->i2c, 2);
+    s->lis331dlh = i2c_create_slave(i2c3, "lis331dlh", 0x1d);
+    qdev_connect_gpio_out(s->lis331dlh, 0,
+                          qdev_get_gpio_in(s->cpu->gpio,
+                                           MILESTONE_LIS331DLH_INT1_GPIO));
+    qdev_connect_gpio_out(s->lis331dlh, 1,
+                          qdev_get_gpio_in(s->cpu->gpio,
+                                           MILESTONE_LIS331DLH_INT2_GPIO));
     
     int i;
     for (i = 0; i < nb_nics; i++) {
@@ -1067,6 +1554,7 @@ static void motodroid_register_devices(void)
 {
     i2c_register_slave(&bq2415x_info);
     i2c_register_slave(&tpa6130_info);
+	i2c_register_slave(&lis331dlh_info);
 	spi_register_device(&motlcd_info);
 }
 

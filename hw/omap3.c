@@ -4050,7 +4050,8 @@ static void omap3_reset(void *opaque)
     omap_sdrc_reset(s->sdrc);
 	omap_gpmc_reset(s->gpmc);
 	omap3_boot_rom_allocate(s, 0);
-    omap3_boot_rom_emu(s);
+	if (bios_name == NULL) omap3_boot_rom_emu(s);
+	else omap3_boot_rom_run(s);
 }
 
 static const struct dma_irq_map omap3_dma_irq_map[] = {
