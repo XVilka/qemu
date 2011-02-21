@@ -1481,7 +1481,7 @@ static void milestone_init(ram_addr_t ram_size,
     qdev_init_nofail(s->motlcd);
 
     /* Initialize NAND */
-	s->nand = nand_init(NAND_MFR_HYNIX, 0xba, dmtd ? dmtd->bdrv : NULL);
+	s->nand = nand_init(NAND_MFR_TOSHIBA, 0xbc, dmtd ? dmtd->bdrv : NULL);
 	nand_setpins(s->nand, 0, 0, 0, 1, 0); /* no write-protect */
 	omap_gpmc_attach(s->cpu->gpmc, MILESTONE_NAND_CS, s->nand, 0, 2);
 
