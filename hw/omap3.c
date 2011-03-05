@@ -3387,6 +3387,7 @@ struct omap3_scm_s {
 	uint8 mem_wkup[1024];    /*0x4800 2600*/
 	uint8 padconfs_wkup[96]; /*0x4800 2a00*/
 	uint32 general_wkup[8];  /*0x4800 2a60*/
+	int security_mode;
 };
 
 #define PADCONFS_VALUE(wakeup0,wakeup1,offmode0,offmode1, \
@@ -3548,10 +3549,17 @@ static void omap3_scm_reset(struct omap3_scm_s *s)
     memset(s->general, 0, sizeof(s->general));
 	s->general[0x01] = 0x4000000;  /* CONTROL_DEVCONF_0 */
 	s->general[0x1c] = 0x1;        /* 0x480022e0?? */
-    s->general[0x20] = 0x30f;      /* CONTROL_STATUS:
-                                    * - device type  = GP Device
-                                    * - sys_boot:6   = oscillator bypass mode
-                                    * - sys_boot:0-5 = NAND, USB, UART3, MMC1*/
+    if (s->security_mode == 0) {
+		s->general[0x20] = 0x30f;      /* CONTROL_STATUS:
+										* - device type  = GP Device
+										* - sys_boot:6   = oscillator bypass mode
+										* - sys_boot:0-5 = NAND, USB, UART3, MMC1*/
+	} else {
+		s->general[0x20] = 0xf;      /* CONTROL_STATUS:
+										* - device type  = GP Device
+										* - sys_boot:6   = oscillator bypass mode
+										* - sys_boot:0-5 = NAND, USB, UART3, MMC1*/
+	}
 	s->general[0x75] = 0x7fc0;     /* CONTROL_PROG_IO0 */
 	s->general[0x76] = 0xaa;       /* CONTROL_PROG_IO1 */
 	s->general[0x7c] = 0x2700;     /* CONTROL_SDRC_SHARING */
@@ -3691,6 +3699,7 @@ static struct omap3_scm_s *omap3_scm_init(struct omap_target_agent_s *ta,
     struct omap3_scm_s *s = (struct omap3_scm_s *) qemu_mallocz(sizeof(*s));
 
     s->mpu = mpu;
+	s->security_mode = mpu->security_mode;
 
     omap3_scm_reset(s);
 
@@ -4072,7 +4081,7 @@ struct omap_mpu_state_s *omap3_mpu_init(int model, int emulate_bootrom,
                                         CharDriverState *chr_uart1,
                                         CharDriverState *chr_uart2,
                                         CharDriverState *chr_uart3,
-                                        CharDriverState *chr_uart4)
+                                        CharDriverState *chr_uart4, int security_mode)
 {
     struct omap_mpu_state_s *s = qemu_mallocz(sizeof(*s));
     ram_addr_t sram_base, q2_base;
@@ -4090,6 +4099,7 @@ struct omap_mpu_state_s *omap3_mpu_init(int model, int emulate_bootrom,
     }
     s->sdram_size = sdram_size;
     s->sram_size = OMAP3XXX_SRAM_SIZE;
+	s->security_mode = security_mode;
 
     /* Clocks */
     omap_clk_init(s);

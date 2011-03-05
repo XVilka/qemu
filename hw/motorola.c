@@ -60,19 +60,26 @@
 #define MILESTONE_NAND_BUFSIZE (0xc000 << 1)
 #define MILESTONE_SMC_CS 1
 
+#define MILESTONE_POWEROFF_GPIO      176
 #define MILESTONE_ONENAND_GPIO       65
 #define MILESTONE_CAMFOCUS_GPIO      68
 #define MILESTONE_CAMLAUNCH_GPIO     69
 #define MILESTONE_SLIDE_GPIO         71
-#define MILESTONE_PROXIMITY_GPIO     89
 #define MILESTONE_HEADPHONE_EN_GPIO  98
-#define MILESTONE_ATMEGA324P_IRQ_GPIO   100
-#define MILESTONE_ATMEGA324P_RESET_GPIO 104
 #define MILESTONE_CAMCOVER_GPIO      110
 #define MILESTONE_KBLOCK_GPIO        113
 #define MILESTONE_HEADPHONE_GPIO     177
+/* Touch screen */
+#define MILESTONE_ATMEGA324P_IRQ_GPIO   99
+#define MILESTONE_ATMEGA324P_RESET_GPIO 164
+/* Accelerometer */
 #define MILESTONE_LIS331DLH_INT2_GPIO 180
 #define MILESTONE_LIS331DLH_INT1_GPIO 181
+/* Magnetometer */
+#define MILESTONE_AKM8973_INT_GPIO	  175
+#define MILESTONE_AKM8973_RESET_GPIO  28
+/* Proximity sensor */
+#define MILESTONE_SHM7743_INT_GPIO    180
 
 //#define DEBUG_BQ2415X
 //#define DEBUG_TPA6130
@@ -1458,9 +1465,10 @@ static void milestone_init(ram_addr_t ram_size,
 #if MAX_SERIAL_PORTS < 3
 #error MAX_SERIAL_PORTS must be at least 3!
 #endif
-    s->cpu = omap3_mpu_init(omap3430, 1, MILESTONE_SDRAM_SIZE,
+    /* Init HIGH SECURITY mode */
+	s->cpu = omap3_mpu_init(omap3430, 1, MILESTONE_SDRAM_SIZE,
                             serial_hds[1], serial_hds[2],
-                            serial_hds[0], NULL);
+                            serial_hds[0], NULL, 1);
 
 	/* Initialize LCD Panel */
     omap_lcd_panel_attach(s->cpu->dss);

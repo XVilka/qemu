@@ -1121,6 +1121,7 @@ struct omap_mpu_state_s {
     DeviceState *omap3_usb_otg;
     DeviceState *omap3_usb_host;
     ram_addr_t bootrom_base;
+	int security_mode;
 };
 
 /* omap1.c */
@@ -1137,7 +1138,7 @@ struct omap_mpu_state_s *omap3_mpu_init(int model, int emulate_bootrom,
                                         CharDriverState *chr_uart1,
                                         CharDriverState *chr_uart2,
                                         CharDriverState *chr_uart3,
-                                        CharDriverState *chr_uart4);
+                                        CharDriverState *chr_uart4, int security_mode);
 
 /* omap3_boot.c */
 void omap3_boot_rom_allocate(struct omap_mpu_state_s *s, int high);

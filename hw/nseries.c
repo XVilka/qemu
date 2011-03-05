@@ -2529,7 +2529,7 @@ static void n900_init(ram_addr_t ram_size,
 #endif
     s->cpu = omap3_mpu_init(omap3430, 1, N900_SDRAM_SIZE,
                             serial_hds[1], serial_hds[2],
-                            serial_hds[0], NULL);
+                            serial_hds[0], NULL, 0);
     omap_lcd_panel_attach(s->cpu->dss);
 
     s->tsc2005 = spi_create_device(omap_mcspi_bus(s->cpu->mcspi, 0),
