@@ -238,7 +238,7 @@ int cpu_exec(CPUState *env1)
     /* the access to env below is actually saving the global register's
        value, so that files not including target-xyz/exec.h are free to
        use it.  */
-    QEMU_BUILD_BUG_ON (sizeof (saved_env_reg) != sizeof (env));
+    //QEMU_BUILD_BUG_ON (sizeof (saved_env_reg) != sizeof (env));
     saved_env_reg = (host_reg_t) env;
     barrier();
     env = env1;
